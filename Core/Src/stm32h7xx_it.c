@@ -234,12 +234,5 @@ void MDMA_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-// USART1 不定长接收回调函数
-void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
-{
-  if(huart->Instance == USART1)
-  {
-    // 接下来把数据扔Queue里边
-  }
-}
+
 /* USER CODE END 1 */

@@ -19,13 +19,16 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
+#include "cmsis_os2.h"
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "uart_protocol.h"
+#include <stdio.h>
+#include "usart.h"
+#include "uart_dyn_rx.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -54,10 +57,12 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-/* Definitions for xLUAQueue */
-osMessageQueueId_t xLUAQueueHandle;
-const osMessageQueueAttr_t xLUAQueue_attributes = {
-  .name = "xLUAQueue"
+
+osThreadId_t LUA_ProcessTaskHandle;
+const osThreadAttr_t LUA_ProcessTask_attributes = {
+  .name = "LUA_ProcessTask",
+  .stack_size = 256 * 4,
+  .priority = (osPriority_t) osPriorityNormal,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -66,6 +71,8 @@ const osMessageQueueAttr_t xLUAQueue_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
+
+void StartLUA_ProcessTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -115,8 +122,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE END RTOS_TIMERS */
 
   /* Create the queue(s) */
-  /* creation of xLUAQueue */
-  xLUAQueueHandle = osMessageQueueNew (256, sizeof(uint32_t), &xLUAQueue_attributes);
 
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
@@ -125,6 +130,9 @@ void MX_FREERTOS_Init(void) {
   /* Create the thread(s) */
   /* creation of defaultTask */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+
+  /* creation of LUA_ProcessTask */
+  defaultTaskHandle = osThreadNew(StartLUA_ProcessTask, NULL, &LUA_ProcessTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -152,6 +160,37 @@ void StartDefaultTask(void *argument)
     osDelay(1);
   }
   /* USER CODE END StartDefaultTask */
+}
+
+/* USER CODE BEGIN Header_StartLUA_ProcessTask */
+/**
+  * @brief  Function implementing the LUA_ProcessTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartLUA_ProcessTask */
+void StartLUA_ProcessTask(void *argument)
+{
+  /* USER CODE BEGIN StartLUA_ProcessTask */
+  UART_DataPacket_t packet;
+  UART_Dynamic_Receive_Init();
+  printf("\033[36mLua Shell>\033[0m");
+  /* Infinite loop */
+  for(;;)
+  {
+    if (xQueueReceive(UART_Receiver.packet_queue, &packet, portMAX_DELAY)) {
+        // 直接转换并处理
+        uint8_t* data_ptr = (uint8_t*)packet.data;
+        data_ptr[packet.length] = '\0';  // 就地修改
+        
+        // 作为字符串处理
+        printf("> %s\n", (char*)data_ptr);
+        
+        // Lua执行
+        // lua_execute_command(L, (char*)data_ptr);
+    }
+  }
+  /* USER CODE END StartLUA_ProcessTask */
 }
 
 /* Private application code --------------------------------------------------*/
