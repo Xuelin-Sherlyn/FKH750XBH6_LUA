@@ -19,14 +19,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "cmsis_os2.h"
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
 #include "usart.h"
 #include "uart_dyn_rx.h"
 /* USER CODE END Includes */
@@ -38,7 +36,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define AXIRAM_ADDR        ((uint8_t*)0x24000000)
+#define AXIRAM_SIZE        ((uint32_t)0x00080000)
+#define SDRAM_ADDR         ((uint8_t*)0xC0000000)
+#define SDRAM_SIZE         ((uint32_t)0x01000000)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,7 +49,11 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-
+static HeapRegion_t HeapRAMRegions[]=
+{
+  {AXIRAM_ADDR, AXIRAM_SIZE},
+  {SDRAM_ADDR, SDRAM_SIZE},
+};
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -57,7 +62,7 @@ const osThreadAttr_t defaultTask_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
-
+/* Definitions for LUA_ProcessTask */
 osThreadId_t LUA_ProcessTaskHandle;
 const osThreadAttr_t LUA_ProcessTask_attributes = {
   .name = "LUA_ProcessTask",
@@ -71,8 +76,7 @@ const osThreadAttr_t LUA_ProcessTask_attributes = {
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
-
-void StartLUA_ProcessTask(void *argument);
+void LUA_ProcessTask_Handle(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -106,7 +110,7 @@ unsigned long getRunTimeCounterValue(void)
   */
 void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
-
+  vPortDefineHeapRegions(HeapRAMRegions);
   /* USER CODE END Init */
 
   /* USER CODE BEGIN RTOS_MUTEX */
@@ -121,8 +125,6 @@ void MX_FREERTOS_Init(void) {
   /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
-  /* Create the queue(s) */
-
   /* USER CODE BEGIN RTOS_QUEUES */
   /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
@@ -132,7 +134,7 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
 
   /* creation of LUA_ProcessTask */
-  defaultTaskHandle = osThreadNew(StartLUA_ProcessTask, NULL, &LUA_ProcessTask_attributes);
+  LUA_ProcessTaskHandle = osThreadNew(LUA_ProcessTask_Handle, NULL, &LUA_ProcessTask_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -162,35 +164,39 @@ void StartDefaultTask(void *argument)
   /* USER CODE END StartDefaultTask */
 }
 
-/* USER CODE BEGIN Header_StartLUA_ProcessTask */
+/* USER CODE BEGIN Header_LUA_ProcessTask_Handle */
 /**
-  * @brief  Function implementing the LUA_ProcessTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_StartLUA_ProcessTask */
-void StartLUA_ProcessTask(void *argument)
+* @brief Function implementing the LUA_ProcessTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_LUA_ProcessTask_Handle */
+void LUA_ProcessTask_Handle(void *argument)
 {
-  /* USER CODE BEGIN StartLUA_ProcessTask */
+  /* USER CODE BEGIN LUA_ProcessTask_Handle */
+  /* Infinite loop */
   UART_DataPacket_t packet;
   UART_Dynamic_Receive_Init();
-  printf("\033[36mLua Shell>\033[0m");
+  safe_printf("\033[36mLua Shell> \033[0m");
   /* Infinite loop */
   for(;;)
   {
-    if (xQueueReceive(UART_Receiver.packet_queue, &packet, portMAX_DELAY)) {
+     if (xQueueReceive(UART_Receiver.packet_queue, &packet, portMAX_DELAY)) {
         // 直接转换并处理
         uint8_t* data_ptr = (uint8_t*)packet.data;
         data_ptr[packet.length] = '\0';  // 就地修改
         
         // 作为字符串处理
-        printf("> %s\n", (char*)data_ptr);
+        safe_printf("%s\n", (char*)data_ptr);
         
         // Lua执行
         // lua_execute_command(L, (char*)data_ptr);
+
+        // 新提示符
+        safe_printf("\033[36mLua Shell> \033[0m");
     }
   }
-  /* USER CODE END StartLUA_ProcessTask */
+  /* USER CODE END LUA_ProcessTask_Handle */
 }
 
 /* Private application code --------------------------------------------------*/

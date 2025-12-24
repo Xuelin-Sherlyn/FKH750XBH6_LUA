@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #include <stdio.h.>
+#include <stdarg.h>
 /* USER CODE END 0 */
 
 UART_HandleTypeDef huart1;
@@ -55,18 +56,18 @@ void MX_USART1_UART_Init(void)
   {
     Error_Handler();
   }
-  if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
-  {
-    Error_Handler();
-  }
+  // if (HAL_UARTEx_SetTxFifoThreshold(&huart1, UART_TXFIFO_THRESHOLD_1_8) != HAL_OK)
+  // {
+  //   Error_Handler();
+  // }
+  // if (HAL_UARTEx_SetRxFifoThreshold(&huart1, UART_RXFIFO_THRESHOLD_1_8) != HAL_OK)
+  // {
+  //   Error_Handler();
+  // }
+  // if (HAL_UARTEx_DisableFifoMode(&huart1) != HAL_OK)
+  // {
+  //   Error_Handler();
+  // }
   /* USER CODE BEGIN USART1_Init 2 */
 
   /* USER CODE END USART1_Init 2 */
@@ -184,27 +185,16 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-#ifdef __GNUC__
-#define PUTCHAR_PROTOTYPE int __io_putchar(int ch)
-#define GETCHAR_PROTOTYPE int __io_getchar(FILE *f)
-#else
-#define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
-#define GETCHAR_PROTOTYPE int fgetc(FILE *f)
-#endif /* __GNUC__ */
-PUTCHAR_PROTOTYPE
-{
-	HAL_UART_Transmit(&huart1, (uint8_t *)&ch, 1, 0xFFFF);
-	return ch;
-}
-GETCHAR_PROTOTYPE
-{
-	uint8_t ch = 0;
-	HAL_UART_Receive(&huart1,(uint8_t *)&ch, 1, 0xFFFF);
-	if (ch == '\r')
-	{
-		__io_putchar('\r');
-		ch = '\n';
-	}
-	return __io_putchar(ch);
+void safe_printf(const char* format, ...) {
+    char buffer[256];
+    va_list args;
+    va_start(args, format);
+    int len = vsnprintf(buffer, sizeof(buffer), format, args);
+    va_end(args);
+    
+    if (len > 0) {
+        // 使用HAL_UART_Transmit阻塞发送，确保完成
+        HAL_UART_Transmit(&huart1, (uint8_t*)buffer, len, 1000);
+    }
 }
 /* USER CODE END 1 */

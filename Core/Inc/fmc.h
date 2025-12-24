@@ -53,7 +53,6 @@ extern SDRAM_HandleTypeDef hsdram1;
 #define SDRAM_MODEREG_WRITEBURST_MODE_SINGLE     ((uint16_t)0x0200)
 /* USER CODE END Private defines */
 
-
 void MX_FMC_Init(void);
 void HAL_SDRAM_MspInit(SDRAM_HandleTypeDef* hsdram);
 void HAL_SDRAM_MspDeInit(SDRAM_HandleTypeDef* hsdram);
