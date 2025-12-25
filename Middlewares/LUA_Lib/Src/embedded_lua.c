@@ -13,7 +13,7 @@ lua_State* embedded_lua_init(void) {
     // luaopen_math(L);
     
     // 2. 注册你的硬件API
-    embedded_lua_register_function(L, "hw_led", lua_led);
+    embedded_lua_register_function(L, "hw_led", lua_hw_led);
     // ... 注册其他函数
     
     return L;

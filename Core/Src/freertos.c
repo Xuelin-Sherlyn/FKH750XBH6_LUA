@@ -35,6 +35,7 @@
 #include <sys/_intsup.h>
 
 #include "lua.h"
+#include "setjmp.h"
 #include "embedded_lua.h"
 #include "hardware_bindings.h"
 /* USER CODE END Includes */
@@ -59,6 +60,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+static jmp_buf g_lua_panic_jmp;
+
 static HeapRegion_t HeapRAMRegions[]=
 {
   {AXIRAM_ADDR, AXIRAM_SIZE},
@@ -83,7 +86,8 @@ const osThreadAttr_t LUA_ProcessTask_attributes = {
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
-
+int lua_panic_handler(lua_State* L);
+int safe_lua_execute(lua_State* L, const char* code, const char* cmd_name);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -242,16 +246,12 @@ void LUA_ProcessTask_Handle(void *argument)
 
     if (xQueueReceive(g_terminal.cmd_queue, &received_cmd, portMAX_DELAY)) {
       if (received_cmd != NULL) {
-        // 处理命令
-        safe_printf("\r\nReceived command: %s\r\n", received_cmd);
+        // 打印原命令，调试可用
+        // safe_printf("\r\nReceived command: %s\r\n", received_cmd);
         
         // TODO: 在这里添加命令解析和处理逻辑
         // 执行命令
-        if(luaL_dostring(L, received_cmd) != LUA_OK) {
-          safe_printf("\r\033[31mLua error: %s\033[0m\r\n", lua_tostring(L, -1));
-          lua_pop(L, 1);
-        }
-        else {
+        if(safe_lua_execute(L, received_cmd, received_cmd) == LUA_OK){
           safe_printf("\033[32m\r%s: Operation Sucess End\033[0m\r\n", received_cmd);
         }
         
@@ -268,6 +268,84 @@ void LUA_ProcessTask_Handle(void *argument)
 
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
+// 安全的Lua初始化
+lua_State* safe_lua_init(void) {
+    lua_State* L = luaL_newstate();
+    if (!L) return NULL;
+    
+    // 关键：设置紧急处理器
+    lua_atpanic(L, lua_panic_handler);
+    
+    if (setjmp(g_lua_panic_jmp) == 0) {
+        // 正常初始化流程
+        luaL_openselectedlibs(L, LUA_STRLIBK | LUA_MATHLIBK, 0);
+        hardware_bindings_init(L);
+        return L;
+    } else {
+        // 从Panic中恢复：关闭并重新创建Lua状态机
+        safe_printf("\033[33mRecreating Lua VM after panic...\033[0m\r\n");
+        lua_close(L);
+        return safe_lua_init(); // 递归但有限，因为panic应不常发生
+    }
+}
 
+int safe_lua_execute(lua_State* L, const char* code, const char* cmd_name) {
+    // 1. 加载代码（捕获语法错误）
+    int load_status = luaL_loadstring(L, code);
+    if (load_status != LUA_OK) {
+        const char* err = lua_tostring(L, -1);
+        safe_printf("\r\n\033[31mSyntax Error: %s\033[0m\r\n", err);
+        lua_pop(L, 1);
+        return -1;
+    }
+    
+    // 2. 在保护模式下执行（捕获所有运行时错误）
+    int exec_status = lua_pcall(L, 0, LUA_MULTRET, 0);
+    
+    // 3. 处理执行结果
+    if (exec_status == LUA_OK) {
+        // 成功 - 处理返回值（如果有）
+        int nresults = lua_gettop(L);
+        if (nresults > 0) {
+            safe_printf("\r\n\033[32mResult(s):\033[0m ");
+            for (int i = 1; i <= nresults; i++) {
+                if (lua_isinteger(L, i)) {
+                    safe_printf("%lld ", lua_tointeger(L, i));
+                } else if (lua_isstring(L, i)) {
+                    safe_printf("%s ", lua_tostring(L, i));
+                } else if (lua_isboolean(L, i)) {
+                    safe_printf(lua_toboolean(L, i) ? "true " : "false ");
+                }
+            }
+            safe_printf("\r\n");
+            lua_pop(L, nresults);
+        }
+        safe_printf("\r\n\033[32m%s: OK\033[0m\r\n", cmd_name);
+        return 0;
+    }
+    else {
+        // 运行时错误（包括调用不存在的函数）
+        const char* err = lua_tostring(L, -1);
+        const char* err_type = 
+            (exec_status == LUA_ERRRUN) ? "Runtime Error" :
+            (exec_status == LUA_ERRMEM) ? "Memory Error" :
+            (exec_status == LUA_ERRERR) ? "Error Handler Error" : "Unknown Error";
+        
+        safe_printf("\r\n\033[31m%s: %s\033[0m\r\n", err_type, err);
+        lua_pop(L, 1);
+        return -2;
+    }
+}
+
+// Lua紧急错误回调（当发生无法恢复的Lua内部错误时调用）
+int lua_panic_handler(lua_State* L) {
+    const char* msg = lua_tostring(L, -1);
+    if (msg == NULL) msg = "unknown panic";
+    safe_printf("\r\n\033[31m[LUA PANIC] %s\033[0m\r\n", msg);
+    
+    // 跳转到安全恢复点
+    longjmp(g_lua_panic_jmp, 1);
+    return 0; // 永远不会执行到这里
+}
 /* USER CODE END Application */
 

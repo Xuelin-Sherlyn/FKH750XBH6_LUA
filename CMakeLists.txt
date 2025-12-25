@@ -51,43 +51,43 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 set(Lua_Src
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/hardware_bindings.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/embedded_lua.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lapi.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lauxlib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lbaselib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lcode.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lcorolib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lctype.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/ldblib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/ldebug.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/ldo.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/ldump.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lfunc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lgc.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/linit.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/liolib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/llex.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lmathlib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lmem.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/loadlib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lobject.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lopcodes.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/loslib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lparser.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lstate.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lstring.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lstrlib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/ltable.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/ltablib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/ltm.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lundump.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lutf8lib.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lvm.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Src/lzio.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/hardware_bindings.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/embedded_lua.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lapi.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lauxlib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lbaselib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lcode.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lcorolib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lctype.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ldblib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ldebug.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ldo.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ldump.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lfunc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lgc.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/linit.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/liolib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/llex.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lmathlib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lmem.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/loadlib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lobject.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lopcodes.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/loslib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lparser.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lstate.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lstring.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lstrlib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltable.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltablib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltm.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lundump.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lutf8lib.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lvm.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lzio.c
 )
 set(LUA_Include_Dirs
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUALibrary/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Inc
 )
 
 set(MX_LINK_LIBS

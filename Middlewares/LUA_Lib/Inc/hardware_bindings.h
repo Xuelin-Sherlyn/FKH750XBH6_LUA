@@ -41,7 +41,7 @@ int luaopen_hardware(lua_State* L);
  * @brief 控制LED。
  * Lua用法: `hw.led(1)` 或 `hw.led(0)`
  */
-int lua_led(lua_State* L);
+int lua_hw_led(lua_State* L);
 
 /**
  * @brief 读取按键状态。
