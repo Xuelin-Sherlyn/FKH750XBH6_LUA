@@ -185,6 +185,20 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+/**
+  * @brief 串口发送单个字节
+  * @param ch: 字节
+  * @retval void
+  */
+void uart_send_char(char ch) {
+    HAL_UART_Transmit(&huart1, (uint8_t*)&ch, 1, 10);
+}
+
+/**
+  * @brief  SSD1306初始化函数
+  * @param format: 字符串格式
+  * @retval HAL状态
+  */
 void safe_printf(const char* format, ...) {
     char buffer[256];
     va_list args;

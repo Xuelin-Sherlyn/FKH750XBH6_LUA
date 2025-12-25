@@ -76,7 +76,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
+  __enable_irq();
   /* USER CODE END 1 */
 
   /* MPU Configuration--------------------------------------------------------*/
@@ -111,13 +111,14 @@ int main(void)
   MX_DMA_Init();
   MX_MDMA_Init();
   MX_USART1_UART_Init();
-  MX_QUADSPI_Init();
+  // MX_QUADSPI_Init();
   MX_I2C1_Init();
   MX_SDMMC1_SD_Init();
   MX_SPI6_Init();
   MX_FMC_Init();
   /* USER CODE BEGIN 2 */
-
+  // if(QSPI_W25Qxx_MemoryMappedMode() != QSPI_W25Qxx_OK)
+  //   Error_Handler();
   /* USER CODE END 2 */
 
   /* Init scheduler */
@@ -240,18 +241,18 @@ void MPU_Config(void)
 
   /** Initializes and configures the Region and the memory to be protected
   */
-  MPU_InitStruct.Number = MPU_REGION_NUMBER2;
-  MPU_InitStruct.BaseAddress = 0x90000000;
-  MPU_InitStruct.Size = MPU_REGION_SIZE_32MB;
-  MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
-  MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
-  MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
+  // MPU_InitStruct.Number = MPU_REGION_NUMBER2;
+  // MPU_InitStruct.BaseAddress = 0x90000000;
+  // MPU_InitStruct.Size = MPU_REGION_SIZE_32MB;
+  // MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL0;
+  // MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_DISABLE;
+  // MPU_InitStruct.IsCacheable = MPU_ACCESS_CACHEABLE;
 
-  HAL_MPU_ConfigRegion(&MPU_InitStruct);
+  // HAL_MPU_ConfigRegion(&MPU_InitStruct);
 
   /** Initializes and configures the Region and the memory to be protected
   */
-  MPU_InitStruct.Number = MPU_REGION_NUMBER3;
+  MPU_InitStruct.Number = MPU_REGION_NUMBER2;
   MPU_InitStruct.BaseAddress = 0xC0000000;
   MPU_InitStruct.TypeExtField = MPU_TEX_LEVEL1;
   MPU_InitStruct.DisableExec = MPU_INSTRUCTION_ACCESS_ENABLE;

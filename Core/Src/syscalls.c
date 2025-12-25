@@ -29,6 +29,7 @@
 #include <time.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include "stm32h7xx_hal.h"
 
 
 /* Variables */
@@ -56,6 +57,25 @@ int _kill(int pid, int sig)
   (void)sig;
   errno = EINVAL;
   return -1;
+}
+
+int _gettimeofday(struct timeval *tv, void *tz)
+{
+    (void)tz;
+    
+    if (tv) {
+        // 返回从启动开始的秒数
+        // 注意：这里使用 HAL_GetTick()，你需要根据实际情况调整
+        uint32_t tick = HAL_GetTick();
+        tv->tv_sec = tick / 1000;
+        tv->tv_usec = (tick % 1000) * 1000;
+        
+        // 简单实现：返回 0
+        tv->tv_sec = 0;
+        tv->tv_usec = 0;
+    }
+    
+    return 0;
 }
 
 void _exit (int status)

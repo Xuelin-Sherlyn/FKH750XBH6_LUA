@@ -80,7 +80,7 @@ SECTIONS
     . = ALIGN(4);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
-  } >FLASH
+  } >QSPIFLASH
 
   /* The program code and other data goes into FLASH */
   .text :
@@ -97,7 +97,7 @@ SECTIONS
 
     . = ALIGN(4);
     _etext = .;        /* define a global symbols at end of code */
-  } >FLASH
+  } >QSPIFLASH
 
   /* Constant data goes into FLASH */
   .rodata :
@@ -106,14 +106,14 @@ SECTIONS
     *(.rodata)         /* .rodata sections (constants, strings, etc.) */
     *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
     . = ALIGN(4);
-  } >FLASH
+  } >QSPIFLASH
 
   .ARM.extab (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
     . = ALIGN(4);
     *(.ARM.extab* .gnu.linkonce.armextab.*)
     . = ALIGN(4);
-  } >FLASH
+  } >QSPIFLASH
 
   .ARM (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -122,7 +122,7 @@ SECTIONS
     *(.ARM.exidx*)
     __exidx_end = .;
     . = ALIGN(4);
-  } >FLASH
+  } >QSPIFLASH
 
   .preinit_array (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -131,7 +131,7 @@ SECTIONS
     KEEP (*(.preinit_array*))
     PROVIDE_HIDDEN (__preinit_array_end = .);
     . = ALIGN(4);
-  } >FLASH
+  } >QSPIFLASH
 
   .init_array (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -141,7 +141,7 @@ SECTIONS
     KEEP (*(.init_array*))
     PROVIDE_HIDDEN (__init_array_end = .);
     . = ALIGN(4);
-  } >FLASH
+  } >QSPIFLASH
 
   .fini_array (READONLY) : /* The "READONLY" keyword is only supported in GCC11 and later, remove it if using GCC10 or earlier. */
   {
@@ -151,7 +151,7 @@ SECTIONS
     KEEP (*(.fini_array*))
     PROVIDE_HIDDEN (__fini_array_end = .);
     . = ALIGN(4);
-  } >FLASH
+  } >QSPIFLASH
 
   /* used by the startup to initialize data */
   _sidata = LOADADDR(.data);
@@ -167,7 +167,7 @@ SECTIONS
     *(.RamFunc*)       /* .RamFunc* sections */
 
     . = ALIGN(4);
-  } >DTCMRAM AT> FLASH
+  } >DTCMRAM AT> QSPIFLASH
 
  /* Initialized TLS data section */
   .tdata : ALIGN(4)
@@ -177,7 +177,7 @@ SECTIONS
     _edata = .;        /* define a global symbol at data end */
     PROVIDE(__data_end = .);
     PROVIDE(__tdata_end = .);
-  } >DTCMRAM AT> FLASH
+  } >DTCMRAM AT> QSPIFLASH
 
   PROVIDE( __tdata_start = ADDR(.tdata) );
   PROVIDE( __tdata_size = __tdata_end - __tdata_start );
@@ -248,6 +248,16 @@ SECTIONS
     *(.ram_d1)
     . = ALIGN(4);
   } >RAM_D1
+
+  .qspiflash :
+  {
+    . = ALIGN(4);
+    *(.text)           /* .text sections (code) */
+    *(.text*)          /* .text* sections (code) */
+    *(.rodata)         /* .rodata sections (constants, strings, etc.) */
+    *(.rodata*)        /* .rodata* sections (constants, strings, etc.) */
+    . = ALIGN(4);
+  } >QSPIFLASH AT> QSPIFLASH
 
   /* Remove information from the standard libraries */
   /DISCARD/ :

@@ -19,6 +19,8 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
+#include "lualib.h"
+#include "portable.h"
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
@@ -26,7 +28,15 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usart.h"
+#include "terminal.h"
 #include "uart_dyn_rx.h"
+#include <stdlib.h>
+#include <string.h>
+#include <sys/_intsup.h>
+
+#include "lua.h"
+#include "embedded_lua.h"
+#include "hardware_bindings.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,20 +63,21 @@ static HeapRegion_t HeapRAMRegions[]=
 {
   {AXIRAM_ADDR, AXIRAM_SIZE},
   {SDRAM_ADDR, SDRAM_SIZE},
+  {NULL,0}
 };
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 128 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for LUA_ProcessTask */
 osThreadId_t LUA_ProcessTaskHandle;
 const osThreadAttr_t LUA_ProcessTask_attributes = {
   .name = "LUA_ProcessTask",
-  .stack_size = 256 * 4,
+  .stack_size = 1024 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -156,6 +167,29 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  safe_printf("Thread run\n");
+  void *axi_sram_ptr = pvPortMalloc(100);
+    if(axi_sram_ptr) {
+        safe_printf("SRAM allocation test: PASS (%p)\r\n", axi_sram_ptr);
+        vPortFree(axi_sram_ptr);
+    } else {
+        safe_printf("SRAM allocation test: FAIL\r\n");
+    }
+    void *sdram_ptr = pvPortMalloc(1024 * 1024);  // 1MB
+    if(sdram_ptr) {
+        safe_printf("SDRAM allocation test: PASS (%p)\r\n", sdram_ptr);
+        
+        /* 验证确实在 SDRAM 地址范围内 */
+        if((uint32_t)sdram_ptr >= (uint32_t)SDRAM_ADDR && 
+           (uint32_t)sdram_ptr < (uint32_t)SDRAM_ADDR + SDRAM_SIZE) {
+            safe_printf("SDRAM address verification: PASS (%p)\r\n", sdram_ptr);
+        } else {
+            safe_printf("SDRAM address verification: FAIL (%p)\r\n", sdram_ptr);
+        }
+        vPortFree(sdram_ptr);
+    } else {
+        safe_printf("SDRAM allocation test: FAIL\r\n");
+    }
   /* Infinite loop */
   for(;;)
   {
@@ -175,25 +209,58 @@ void LUA_ProcessTask_Handle(void *argument)
 {
   /* USER CODE BEGIN LUA_ProcessTask_Handle */
   /* Infinite loop */
-  UART_DataPacket_t packet;
-  UART_Dynamic_Receive_Init();
-  safe_printf("\033[36mLua Shell> \033[0m");
+  // UART_DataPacket_t packet;
+  char* received_cmd = NULL;
+  lua_State* L;
+  Terminal_Init();
+  // 创建Lua虚拟机（这个任务的私有资源）
+  L = luaL_newstate();
+  if (L == NULL) {
+    vTaskDelete(NULL);
+  }
+  luaL_openlibs(L); // 打开基础库
+  hardware_bindings_init(L); // 注册你的硬件API
+  // UART_Dynamic_Receive_Init();
+  // safe_printf("\033[36mLua Shell> \033[0m");
   /* Infinite loop */
   for(;;)
   {
-     if (xQueueReceive(UART_Receiver.packet_queue, &packet, portMAX_DELAY)) {
-        // 直接转换并处理
-        uint8_t* data_ptr = (uint8_t*)packet.data;
-        data_ptr[packet.length] = '\0';  // 就地修改
+    //  if (xQueueReceive(UART_Receiver.packet_queue, &packet, portMAX_DELAY)) {
+    //     // 直接转换并处理
+    //     uint8_t* data_ptr = (uint8_t*)packet.data;
+    //     data_ptr[packet.length] = '\0';  // 就地修改
         
-        // 作为字符串处理
-        safe_printf("%s\n", (char*)data_ptr);
+    //     // 作为字符串处理
+    //     safe_printf("%s\n", (char*)data_ptr);
         
-        // Lua执行
-        // lua_execute_command(L, (char*)data_ptr);
+    //     // Lua执行
+    //     // lua_execute_command(L, (char*)data_ptr);
 
-        // 新提示符
-        safe_printf("\033[36mLua Shell> \033[0m");
+    //     // 新提示符
+    //     safe_printf("\033[36mLua Shell> \033[0m");
+    // }
+
+    if (xQueueReceive(g_terminal.cmd_queue, &received_cmd, portMAX_DELAY)) {
+      if (received_cmd != NULL) {
+        // 处理命令
+        safe_printf("\r\nReceived command: %s\r\n", received_cmd);
+        
+        // TODO: 在这里添加命令解析和处理逻辑
+        // 执行命令
+        if(luaL_dostring(L, received_cmd) != LUA_OK) {
+          safe_printf("\r\033[31mLua error: %s\033[0m\r\n", lua_tostring(L, -1));
+          lua_pop(L, 1);
+        }
+        else {
+          safe_printf("\033[32m\r%s: Operation Sucess End\033[0m\r\n", received_cmd);
+        }
+        
+        // 释放内存
+        free(received_cmd);
+        received_cmd = NULL;
+        // 显示新的提示符
+        safe_printf("\r\033[36m[Lua Shell]>\033[0m ");
+      }
     }
   }
   /* USER CODE END LUA_ProcessTask_Handle */

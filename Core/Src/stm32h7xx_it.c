@@ -22,6 +22,7 @@
 #include "stm32h7xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "usart.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -89,7 +90,53 @@ void NMI_Handler(void)
 void HardFault_Handler(void)
 {
   /* USER CODE BEGIN HardFault_IRQn 0 */
-
+  safe_printf("\r\n\033[31mHardFault Call!!!\033[0m\n");
+  // 获取所有相关寄存器
+  uint32_t cfsr = SCB->CFSR;
+  uint32_t hfsr = SCB->HFSR; 
+  uint32_t mmfar = SCB->MMFAR;
+  uint32_t bfar = SCB->BFAR;
+  uint32_t shcsr = SCB->SHCSR;
+  
+  safe_printf("\rCFSR:  0x%08lX\n", (unsigned long)cfsr);
+  safe_printf("\rHFSR:  0x%08lX\n", (unsigned long)hfsr);
+  safe_printf("\rMMFAR: 0x%08lX\n", (unsigned long)mmfar);
+  safe_printf("\rBFAR:  0x%08lX\n", (unsigned long)bfar);
+  safe_printf("\rSHCSR: 0x%08lX\n", (unsigned long)shcsr);
+  
+  // 详细解析 CFSR
+  if(cfsr & (1 << 0))  safe_printf("\r  IACCVIOL: Instruction access violation\n");
+  if(cfsr & (1 << 1))  safe_printf("\r  DACCVIOL: Data access violation\n");
+  if(cfsr & (1 << 3))  safe_printf("\r  MUNSTKERR: MemManage on unstacking\n");
+  if(cfsr & (1 << 4))  safe_printf("\r  MSTKERR: MemManage on stacking\n");
+  if(cfsr & (1 << 5))  safe_printf("\r  MLSPERR: MemManage FPU lazy state\n");
+  if(cfsr & (1 << 7))  safe_printf("\r  MMARVALID: MMFAR is valid\n");
+  if(cfsr & (1 << 8))  safe_printf("\r  IBUSERR: Instruction bus error\n");
+  if(cfsr & (1 << 9))  safe_printf("\r  PRECISERR: Precise data bus error\n");
+  if(cfsr & (1 << 10)) safe_printf("\r  IMPRECISERR: Imprecise data bus error\n");
+  if(cfsr & (1 << 11)) safe_printf("\r  UNSTKERR: Bus fault on unstacking\n");
+  if(cfsr & (1 << 12)) safe_printf("\r  STKERR: Bus fault on stacking\n");
+  if(cfsr & (1 << 13)) safe_printf("\r  LSPERR: Bus fault FPU lazy state\n");
+  if(cfsr & (1 << 15)) safe_printf("\r  BFARVALID: BFAR is valid\n");
+  if(cfsr & (1 << 16)) safe_printf("\r  UNDEFINSTR: Undefined instruction\n");
+  if(cfsr & (1 << 17)) safe_printf("\r  INVSTATE: Invalid state\n");
+  if(cfsr & (1 << 18)) safe_printf("\r  INVPC: Invalid PC load\n");
+  if(cfsr & (1 << 19)) safe_printf("\r  NOCP: No coprocessor\n");
+  if(cfsr & (1 << 24)) safe_printf("\r  DIVBYZERO: Division by zero\n");
+  if(cfsr & (1 << 25)) safe_printf("\r  UNALIGNED: Unaligned access\n");
+  
+  // 获取调用栈信息
+  uint32_t *msp = (uint32_t *)__get_MSP();
+  uint32_t *psp = (uint32_t *)__get_PSP();
+  
+  safe_printf("\rMSP: 0x%08lX\n", (unsigned long)(uint32_t)msp);
+  safe_printf("\rPSP: 0x%08lX\n", (unsigned long)(uint32_t)psp);
+  
+  // 打印栈内容（可能包含返回地址）
+  safe_printf("\rStack dump (MSP):\n");
+  for(int i = 0; i < 16; i++) {
+      safe_printf("\r  [0x%08lX]: 0x%08lX\n", (unsigned long)(uint32_t)(msp + i), (unsigned long)msp[i]);
+  }
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
