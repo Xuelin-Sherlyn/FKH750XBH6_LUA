@@ -78,7 +78,7 @@ int luaopen_hardware(lua_State* L) {
 
 // 4. 初始化函数（在你的main.c或嵌入式初始化中调用）
 void hardware_bindings_init(lua_State* L) {
-    // 注册硬件模块为全局表 "hw"
+    // 注册硬件模块为全局表 "hardware"
     luaL_requiref(L, "hardware", luaopen_hardware, 1);
     lua_pop(L, 1); // 移除require留下的副本
 }
