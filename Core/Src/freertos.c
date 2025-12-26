@@ -36,7 +36,7 @@
 
 #include "lua.h"
 #include "setjmp.h"
-#include "embedded_lua.h"
+// #include "embedded_lua.h"
 #include "hardware_bindings.h"
 /* USER CODE END Includes */
 
@@ -223,6 +223,7 @@ void LUA_ProcessTask_Handle(void *argument)
     vTaskDelete(NULL);
   }
   luaL_openlibs(L); // 打开基础库
+  // embedded_lua_init();
   hardware_bindings_init(L); // 注册你的硬件API
   // UART_Dynamic_Receive_Init();
   // safe_printf("\033[36mLua Shell> \033[0m");

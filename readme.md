@@ -1,6 +1,6 @@
 # 运行于FKH750XBH6(32Bits SDRAM)的LUA Shell解释器
 
-![图片alt](./Assets/ScreenShot.png "图片title")
+![Image](./Assets/ScreenShot.png)
 
 ## 原理
 首先通过USART1接收命令行字节并匹配Terminal的行编辑模式并实时回显，然后在接收到方向键时移动光标或者翻历史记录(最高10条，要增减自己改MAX_HISTORY定义)

@@ -52,7 +52,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 
 set(Lua_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/hardware_bindings.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/embedded_lua.c
+    # ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/embedded_lua.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lapi.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lauxlib.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lbaselib.c

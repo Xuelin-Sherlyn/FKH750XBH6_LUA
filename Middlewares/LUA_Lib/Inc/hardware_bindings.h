@@ -14,7 +14,7 @@ extern "C" {
  * @brief 初始化硬件绑定库，并注册到指定的Lua状态机。
  * 
  * 这是最主要的函数，在你的应用启动Lua后调用一次。
- * 它会在Lua全局环境中创建名为 `hw` 的表，所有硬件函数都注册在其中。
+ * 它会在Lua全局环境中创建名为 `hardware` 的表，所有硬件函数都注册在其中。
  * 
  * @param L 已初始化的Lua状态机指针。
  */
@@ -33,38 +33,44 @@ int luaopen_hardware(lua_State* L);
 
 /* 
  * 以下是为特定硬件操作编写的C函数声明。
- * 它们被注册到Lua的 `hw` 表中，供脚本调用。
+ * 它们被注册到Lua的 `hardware` 表中，供脚本调用。
  * 每个函数都对应一个具体的硬件操作。
  */
 
 /**
  * @brief 控制LED。
- * Lua用法: `hw.led(1)` 或 `hw.led(0)`
+ * Lua用法: `hardware.led(1)` 或 `hardware.led(0)`
  */
 int lua_hw_led(lua_State* L);
 
 /**
  * @brief 读取按键状态。
- * Lua用法: `state = hw.btn()`
+ * Lua用法: `state = hardware.btn()`
  */
-int lua_button(lua_State* L);
+int lua_hw_button(lua_State* L);
 
 /**
  * @brief 毫秒级延时（阻塞）。
- * Lua用法: `hw.delay(100)`
+ * Lua用法: `hardware.delay(100)`
  * 注意：在RTOS中，你可能想用非阻塞的 `vTaskDelay` 重写此函数。
  */
-int lua_delay(lua_State* L);
+int lua_hw_delay(lua_State* L);
+
+/**
+ * @brief 帮助函数。
+ * Lua用法: `hardware.help`
+ */
+int lua_hw_help(lua_State* L);
 
 /**
  * @brief 设置PWM输出（示例，需要根据你的定时器配置修改）。
- * Lua用法: `hw.pwm(channel, frequency, duty_cycle)`
+ * Lua用法: `hardware.pwm(channel, frequency, duty_cycle)`
  */
 // static int lua_pwm(lua_State* L); // 按需启用
 
 /**
  * @brief 读取ADC值（示例）。
- * Lua用法: `value = hw.adc(channel)`
+ * Lua用法: `value = hardware.adc(channel)`
  */
 // static int lua_adc(lua_State* L); // 按需启用
 

@@ -10,6 +10,7 @@
 
 #include <limits.h>
 #include <stddef.h>
+#include "usart.h"
 
 
 /*
@@ -738,8 +739,20 @@
 ** Local configuration. You can use this space to add your redefinitions
 ** without modifying the main part of the file.
 */
+#define configLUAPRINTF(format, ...) do { \
+    char buffer[256]; \
+    int len = snprintf(buffer, sizeof(buffer), format, ##__VA_ARGS__); \
+    if (len > 0 && len < sizeof(buffer)) { \
+        safe_printf(buffer); \
+    } \
+} while(0)
 
-
+#define LUA_USE_USART_OUTPUT
 
 #endif
 
+#if defined(LUA_USE_USART_OUTPUT)
+#define lua_writestring(s,l)   safe_printf("\r\n%s",s)
+#define lua_writeline()        uart_send_char('\r')
+#define lua_writestringerror(s,p) configLUAPRINTF(s, p)
+#endif

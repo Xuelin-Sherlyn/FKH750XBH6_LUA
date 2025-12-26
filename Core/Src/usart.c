@@ -195,9 +195,8 @@ void uart_send_char(char ch) {
 }
 
 /**
-  * @brief  SSD1306初始化函数
+  * @brief  安全型printf，用阻塞方式防止打印出错
   * @param format: 字符串格式
-  * @retval HAL状态
   */
 void safe_printf(const char* format, ...) {
     char buffer[256];
