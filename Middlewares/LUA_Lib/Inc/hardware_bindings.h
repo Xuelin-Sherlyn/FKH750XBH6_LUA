@@ -50,7 +50,7 @@ int lua_hw_led(lua_State* L);
 int lua_hw_button(lua_State* L);
 
 /**
- * @brief 毫秒级延时（阻塞）。
+ * @brief 毫秒级延时（目前非阻塞）。
  * Lua用法: `hardware.delay(100)`
  * 注意：在RTOS中，你可能想用非阻塞的 `vTaskDelay` 重写此函数。
  */
@@ -61,6 +61,40 @@ int lua_hw_delay(lua_State* L);
  * Lua用法: `hardware.help`
  */
 int lua_hw_help(lua_State* L);
+
+/**
+ * @brief I²C接口数据发送。
+ * Lua用法: `hardware.i2c_send(address, {data})`
+ * address: I2C设备地址（7位地址）
+ * {data}: 要写入的数据块
+ */
+int lua_hw_i2c_send(lua_State *L);
+
+/**
+ * @brief I²C接口数据接收。
+ * Lua用法: `hardware.i2c_recv(address, length)`
+ * address: I2C设备地址（7位地址）
+ * length: 要读取的字节数
+ */
+int lua_hw_i2c_recv(lua_State *L);
+
+/**
+ * @brief I²C接口数写寄存器。
+ * Lua用法: `hardware.i2c_writereg(address，reg, length)`
+ * address: I2C设备地址（7位地址）
+ * reg: 要写入的寄存器地址（单字节）
+ * length: 要读取的字节数（可选，默认为1）
+ */
+int lua_hw_i2c_write_reg(lua_State *L);
+
+/**
+ * @brief I²C接口数读寄存器。
+ * Lua用法: `hardware.i2c_reagreg(address，reg, length)`
+ * address: I2C设备地址（7位地址）
+ * reg: 要读取的寄存器地址（单字节）
+ * length: 要读取的字节数（可选，默认为1）
+ */
+int lua_hw_i2c_read_reg(lua_State *L);
 
 /**
  * @brief 设置PWM输出（示例，需要根据你的定时器配置修改）。
