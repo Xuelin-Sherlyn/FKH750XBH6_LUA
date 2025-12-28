@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usart.h"
+#include "sdmmc.h"
 #include "terminal.h"
 #include "uart_dyn_rx.h"
 #include <stdlib.h>
@@ -36,6 +37,7 @@
 #include "lualib.h"
 #include "portable.h"
 #include "setjmp.h"
+#include "fatfs.h"
 // #include "embedded_lua.h"
 #include "hardware_bindings.h"
 /* USER CODE END Includes */
@@ -47,10 +49,10 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define DTCMRAM_ADDR       ((uint8_t*)0x20008000)
-#define DTCMRAM_SIZE       ((uint32_t)0x00018000)
-#define AXIRAM_ADDR        ((uint8_t*)0x24000000)
-#define AXIRAM_SIZE        ((uint32_t)0x00080000)
+#define DTCMRAM_ADDR       ((uint8_t*)0x20010000)
+#define DTCMRAM_SIZE       ((uint32_t)0x00010000)
+#define AXIRAM_ADDR        ((uint8_t*)0x24002000)
+#define AXIRAM_SIZE        ((uint32_t)0x00078000)
 #define SDRAM_ADDR         ((uint8_t*)0xC0000000)
 #define SDRAM_SIZE         ((uint32_t)0x01000000)
 /* USER CODE END PD */
@@ -62,6 +64,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
+FATFS *fs;
 static jmp_buf g_lua_panic_jmp;
 
 static HeapRegion_t HeapRAMRegions[]=
@@ -83,7 +86,7 @@ const osThreadAttr_t defaultTask_attributes = {
 osThreadId_t LUA_ProcessTaskHandle;
 const osThreadAttr_t LUA_ProcessTask_attributes = {
   .name = "LUA_ProcessTask",
-  .stack_size = 256 * 4,
+  .stack_size = 512 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
@@ -91,6 +94,11 @@ const osThreadAttr_t LUA_ProcessTask_attributes = {
 /* USER CODE BEGIN FunctionPrototypes */
 int lua_panic_handler(lua_State* L);
 int safe_lua_execute(lua_State* L, const char* code, const char* cmd_name);
+
+void FatFs_Check(void);
+void FatFs_GetVolume(void);
+void FatFS_FileList(char* path);
+uint8_t FatFs_FileTest(void);
 /* USER CODE END FunctionPrototypes */
 
 void StartDefaultTask(void *argument);
@@ -174,28 +182,28 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  safe_printf("Thread run\n");
+  // safe_printf("\rThread run\n");
   void *axi_sram_ptr = pvPortMalloc(100);
     if(axi_sram_ptr) {
-        safe_printf("SRAM allocation test: PASS (%p)\r\n", axi_sram_ptr);
+        safe_printf("\rSRAM allocation test: PASS (%p)\r\n", axi_sram_ptr);
         vPortFree(axi_sram_ptr);
     } else {
-        safe_printf("SRAM allocation test: FAIL\r\n");
+        safe_printf("\rSRAM allocation test: FAIL\r\n");
     }
     void *sdram_ptr = pvPortMalloc(1024 * 1024);  // 1MB
     if(sdram_ptr) {
-        safe_printf("SDRAM allocation test: PASS (%p)\r\n", sdram_ptr);
+        safe_printf("\rSDRAM allocation test: PASS (%p)\r\n", sdram_ptr);
         
         /* 验证确实在 SDRAM 地址范围内 */
         if((uint32_t)sdram_ptr >= (uint32_t)SDRAM_ADDR && 
            (uint32_t)sdram_ptr < (uint32_t)SDRAM_ADDR + SDRAM_SIZE) {
-            safe_printf("SDRAM address verification: PASS (%p)\r\n", sdram_ptr);
+            safe_printf("\rSDRAM address verification: PASS (%p)\r\n", sdram_ptr);
         } else {
-            safe_printf("SDRAM address verification: FAIL (%p)\r\n", sdram_ptr);
+            safe_printf("\rSDRAM address verification: FAIL (%p)\r\n", sdram_ptr);
         }
         vPortFree(sdram_ptr);
     } else {
-        safe_printf("SDRAM allocation test: FAIL\r\n");
+        safe_printf("\rSDRAM allocation test: FAIL\r\n");
     }
   /* Infinite loop */
   for(;;)
@@ -219,6 +227,7 @@ void LUA_ProcessTask_Handle(void *argument)
   // UART_DataPacket_t packet;
   char* received_cmd = NULL;
   lua_State* L;
+  FatFs_Check();
   Terminal_Init();
   // 创建Lua虚拟机（这个任务的私有资源）
   L = luaL_newstate();
@@ -266,6 +275,7 @@ void LUA_ProcessTask_Handle(void *argument)
         safe_printf("\r\033[36m[Lua Shell]>\033[0m ");
       }
     }
+    // osDelay(1);
   }
   /* USER CODE END LUA_ProcessTask_Handle */
 }
@@ -350,6 +360,165 @@ int lua_panic_handler(lua_State* L) {
     // 跳转到安全恢复点
     longjmp(g_lua_panic_jmp, 1);
     return 0; // 永远不会执行到这里
+}
+
+// 判断FatFs是否挂载成功，若没有创建FatFs则格式化SD卡
+void FatFs_Check(void)
+{
+	BYTE work[_MAX_SS];
+
+	FATFS_LinkDriver(&SD_Driver, SDPath);		   // 初始化驱动
+	retSD = f_mount(&SDFatFS, SDPath, 1);	 // 挂载SD卡
+
+	if (retSD == FR_OK)	//判断是否挂载成功
+	{
+		safe_printf("\r\033[32mSD File System Mount Sucess\033[0m\r\n");
+	}
+	else
+	{
+		if(retSD == 13)
+		{
+			safe_printf("\r\033[33mSD Card`s File system has not been created yet, about to format\033[0m\r\n");
+
+			retSD = f_mkfs(SDPath,FM_FAT32,0,work,sizeof work);		//格式化SD卡，FAT32，簇默认大小16K
+
+			if (retSD == FR_OK)		//判断是否格式化成功
+				safe_printf("\r\033[32mSD card formatted successfully!\033[0m\r\n");
+			else
+				safe_printf("\r\033[31mFormatting failed, please check or replace the SD card!\033[0m\r\n");
+		}
+		else
+			safe_printf("\r\033[31mMount Fail:%d\033[0m\r\n",retSD);
+	}
+}
+
+//	函数：FatFs_GetVolume
+//	功能：计算设备的容量，包括总容量和剩余容量
+void FatFs_GetVolume(void)	// 计算设备容量
+{
+//	static FATFS *fs;		//定义结构体指针
+	uint32_t SD_CardCapacity = 0;		//SD卡的总容量
+	uint32_t SD_FreeCapacity = 0;		//SD卡空闲容量
+	DWORD fre_clust, fre_sect, tot_sect; 	//空闲簇，空闲扇区数，总扇区数
+
+	f_getfree(SDPath,&fre_clust,&fs);			//获取SD卡剩余的簇
+
+	tot_sect = (fs->n_fatent-2) * fs->csize;	//总扇区数量 = 总的簇 * 每个簇包含的扇区数
+	fre_sect = fre_clust * fs->csize;			//计算剩余的可用扇区数
+
+	SD_CardCapacity = tot_sect / 2048 ;	// SD卡总容量 = 总扇区数 * 512( 每扇区的字节数 ) / 1048576(换算成MB)
+	SD_FreeCapacity = fre_sect / 2048 ;	//计算剩余的容量，单位为M
+	safe_printf("-------------------Get device capacity information-----------------\r\n");
+	safe_printf("SD Capacity:%luMB\r\n", (unsigned long)SD_CardCapacity);
+	safe_printf("SD Remaining:%luMB\r\n", (unsigned long)SD_FreeCapacity);
+}
+
+// 列出介质内的文件
+void FatFS_FileList(char* path)
+{
+	FRESULT res; //文件操作返回代码
+	DIR dir;     //目录对象
+	static FILINFO fno; //文件信息句柄
+
+  if(path != NULL)
+  {
+    safe_printf("Target Media Path:%s\n", path);
+	  res = f_opendir(&dir, path); //打开目录
+	  if (res == FR_OK)
+	  {
+		  while (1) //循环读取
+		  {
+			  res = f_readdir(&dir, &fno);
+			  if (res != FR_OK || fno.fname[0] == 0) break;
+			  char path_pic[512];
+			  sprintf(path_pic, "%s/%s", path, fno.fname);
+			  safe_printf("Files Path:%s\r\n", path_pic);
+			  osDelay(10);
+		  }
+		  f_closedir(&dir); //关闭目录
+	  }
+	  else
+	  {
+		  safe_printf("open Fail: %d\r\n", res); //输出失败信息
+	  }
+  }
+  else 
+  {
+    safe_printf("Target Media Path is NULL!\n"); 
+  }
+}
+
+//	函数：FatFs_FileTest
+//	功能：进行文件写入和读取测试
+//
+uint8_t FatFs_FileTest(void)	//文件创建和写入测试
+{
+	uint8_t i = 0;
+	uint16_t BufferSize = 0;
+	FIL	MyFile;			// 文件对象
+	UINT 	MyFile_Num;		//	数据长度
+	BYTE 	MyFile_WriteBuffer[] = "STM32H750XBH6 SD卡 文件系统测试";	//要写入的数据
+	BYTE 	MyFile_ReadBuffer[1024];	//要读出的数据
+  uint8_t MyFile_Res;
+
+	safe_printf("-------------FatFs File Create and Read/Write Test---------------\r\n");
+
+	if(f_open(&MyFile,"0:FatFs Test.txt",FA_CREATE_ALWAYS | FA_WRITE) == FR_OK) //打开文件，若不存在则创建该文件
+	{
+		safe_printf("File Open/Create Sucess,Ready Write Data...\r\n");
+
+		if (f_write(&MyFile,MyFile_WriteBuffer,sizeof(MyFile_WriteBuffer),&MyFile_Num) == FR_OK)	//向文件写入数据
+		{
+			safe_printf("Write Sucess,Write Content\r\n");
+			safe_printf("%s\r\n",MyFile_WriteBuffer);
+		}
+		else
+		{
+			safe_printf("Failed to write file. Please check the SD card or reformat it!\r\n");
+			f_close(&MyFile);	  //关闭文件
+			return ERROR;
+		}
+		f_close(&MyFile);	  //关闭文件
+	}
+	else
+	{
+		safe_printf("Unable to open/create file, please check the SD card or reformat it!\r\n");
+		f_close(&MyFile);	  //关闭文件
+		return ERROR;
+	}
+
+	osDelay(1);
+	safe_printf("-------------FatFs File Read Test---------------\r\n");
+
+	BufferSize = sizeof(MyFile_WriteBuffer)/sizeof(BYTE);									// 计算写入的数据长度
+	MyFile_Res = f_open(&MyFile,"0:FatFs Test.txt",FA_OPEN_EXISTING | FA_READ);	//打开文件，若不存在则创建该文件
+	MyFile_Res = f_lseek(&MyFile, SEEK_SET);									//移动文件指针到开头
+	MyFile_Res = f_read(&MyFile,MyFile_ReadBuffer,BufferSize,&MyFile_Num);		// 读取文件
+	if(MyFile_Res == FR_OK)
+	{
+		safe_printf("File read successfully, verifying data...\r\n");
+
+		for(i=0;i<BufferSize;i++)
+		{
+			if(MyFile_WriteBuffer[i] != MyFile_ReadBuffer[i])		// 校验数据
+			{
+				safe_printf("Verification failed, please check the SD card or reformat it!\r\nContent written on the card:%s\nContent read:%s\n",MyFile_WriteBuffer,MyFile_ReadBuffer);
+				f_close(&MyFile);	  //关闭文件
+				return ERROR;
+			}
+		}
+		safe_printf("Verification successful, the data read is:\r\n");
+		safe_printf("%s\r\n",MyFile_ReadBuffer);
+	}
+	else
+	{
+		safe_printf("Unable to read the file. Please check the SD card or reformat it!\r\n");
+		f_close(&MyFile);	  //关闭文件
+		return ERROR;
+	}
+
+	f_close(&MyFile);	  //关闭文件
+	return SUCCESS;
 }
 /* USER CODE END Application */
 

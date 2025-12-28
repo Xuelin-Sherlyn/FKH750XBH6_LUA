@@ -7,6 +7,7 @@
 #include "task.h"
 #include "main.h" // 包含 HAL_GPIO_WritePin 等定义
 #include "usart.h"
+#include "sdmmc.h"
 
 extern I2C_HandleTypeDef hi2c1;
 
@@ -19,6 +20,7 @@ const luaL_Reg hw_functions[] = {
     {"i2c_recv",    lua_hw_i2c_recv},
     {"i2c_writereg",lua_hw_i2c_write_reg},
     {"i2c_readreg", lua_hw_i2c_read_reg},
+    {"sdinfo",      lua_hw_print_sdcard_info},
     {"help",        lua_hw_help},
     // 可以继续添加 {"pwm", lua_pwm}, {"adc", lua_adc} 等
     {NULL, NULL} // 结束标记
@@ -338,15 +340,52 @@ int lua_hw_i2c_read_reg(lua_State *L)
     return 1;
 }
 
+// SD Card HAL层检查函数
+int lua_hw_print_sdcard_info(lua_State *L)
+{
+	HAL_SD_CardInfoTypeDef  SDCardInfo;
+	uint64_t CardCap;      	//SD卡容量
+	HAL_SD_CardCIDTypeDef SDCard_CID;
+
+	HAL_SD_GetCardCID(&hsd1,&SDCard_CID);	//获取CID
+	HAL_SD_GetCardInfo(&hsd1,&SDCardInfo);                    //获取SD卡信息
+	CardCap=(uint64_t)(SDCardInfo.LogBlockNbr)*(uint64_t)(SDCardInfo.LogBlockSize);	//计算SD卡容量
+	switch(SDCardInfo.CardType)
+	{
+		case CARD_SDSC:
+		{
+			if(SDCardInfo.CardVersion == CARD_V1_X)
+				safe_printf("\r\nCard Type:SDSC V1\r\n");
+			else if(SDCardInfo.CardVersion == CARD_V2_X)
+				safe_printf("\r\nCard Type:SDSC V2\r\n");
+		}
+		break;
+		case CARD_SDHC_SDXC:safe_printf("\r\nCard Type:SDHC\r\n");break;
+		default:break;
+	}
+
+    safe_printf("\rCard ManufacturerID: %d \r\n",    SDCard_CID.ManufacturerID);				//制造商ID
+	safe_printf("\rCardVersion:         %lu \r\n",   (unsigned long)(SDCardInfo.CardVersion));	//卡版本号
+	safe_printf("\rClass:               %lu \r\n",   (unsigned long)(SDCardInfo.Class));		//
+	safe_printf("\rCard RCA(RelCardAdd):%lu \r\n",   (unsigned long)SDCardInfo.RelCardAdd);		//卡相对地址
+	safe_printf("\rCard BlockNbr:       %lu \r\n",   (unsigned long)SDCardInfo.BlockNbr);		//块数量
+	safe_printf("\rCard BlockSize:      %lu \r\n",   (unsigned long)SDCardInfo.BlockSize);		//块大小
+	safe_printf("\rLogBlockNbr:         %lu \r\n",   (unsigned long)(SDCardInfo.LogBlockNbr));	//逻辑块数量
+	safe_printf("\rLogBlockSize:        %lu \r\n",   (unsigned long)(SDCardInfo.LogBlockSize));	//逻辑块大小
+	safe_printf("\rCard Capacity:       %lu MB\r\n", (unsigned long)(CardCap>>20));				//卡容量
+    return 0;
+}
+
 int lua_hw_help(lua_State* L) {
     safe_printf("\r\n\033[36m=== Hardware API Help ===\033[0m\r\n");
     safe_printf("hardware.led(state)                            - Control LED (0=OFF, 1=ON)\r\n");
-    safe_printf("hardware.button                                - Read Button (0=Release, 1=Press)\r\n");
+    safe_printf("hardware.button()                              - Read Button (0=Release, 1=Press)\r\n");
     safe_printf("hardware.delay(ms)                             - Delay in milliseconds\r\n");
     safe_printf("hardware.i2c_send(address, {data})             - Write I2C Devices\r\n");
     safe_printf("hardware.i2c_recv(address, length)             - Read I2C Devices\r\n");
     safe_printf("hardware.i2c_writereg(address, reg, length)    - Write I2C Devices Reg\r\n");
-    safe_printf("hardware.i2c_readreg(address, reg, length)     - read I2C Devices Reg\r\n");
+    safe_printf("hardware.i2c_readreg(address, reg, length)     - Read I2C Devices Reg\r\n");
+    safe_printf("hardware.sdinfo()                              - Print SD Card Information\r\n");
     // 更多帮助信息...
     safe_printf("\r\nType 'hardware' to see available functions\r\n");
     return 0;

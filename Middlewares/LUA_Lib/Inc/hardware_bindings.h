@@ -97,6 +97,12 @@ int lua_hw_i2c_write_reg(lua_State *L);
 int lua_hw_i2c_read_reg(lua_State *L);
 
 /**
+ * @brief SD卡信息打印。
+ * Lua用法: `hardware.sdinfo()`
+ */
+int lua_hw_print_sdcard_info(lua_State *L);
+
+/**
  * @brief 设置PWM输出（示例，需要根据你的定时器配置修改）。
  * Lua用法: `hardware.pwm(channel, frequency, duty_cycle)`
  */
