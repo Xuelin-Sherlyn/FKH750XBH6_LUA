@@ -19,8 +19,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "FreeRTOS.h"
-#include "lualib.h"
-#include "portable.h"
 #include "task.h"
 #include "main.h"
 #include "cmsis_os.h"
@@ -35,6 +33,8 @@
 #include <sys/_intsup.h>
 
 #include "lua.h"
+#include "lualib.h"
+#include "portable.h"
 #include "setjmp.h"
 // #include "embedded_lua.h"
 #include "hardware_bindings.h"
@@ -47,6 +47,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define DTCMRAM_ADDR       ((uint8_t*)0x20008000)
+#define DTCMRAM_SIZE       ((uint32_t)0x00018000)
 #define AXIRAM_ADDR        ((uint8_t*)0x24000000)
 #define AXIRAM_SIZE        ((uint32_t)0x00080000)
 #define SDRAM_ADDR         ((uint8_t*)0xC0000000)
@@ -64,6 +66,7 @@ static jmp_buf g_lua_panic_jmp;
 
 static HeapRegion_t HeapRAMRegions[]=
 {
+  {DTCMRAM_ADDR, DTCMRAM_SIZE},
   {AXIRAM_ADDR, AXIRAM_SIZE},
   {SDRAM_ADDR, SDRAM_SIZE},
   {NULL,0}
@@ -73,14 +76,14 @@ static HeapRegion_t HeapRAMRegions[]=
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 256 * 4,
+  .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 /* Definitions for LUA_ProcessTask */
 osThreadId_t LUA_ProcessTaskHandle;
 const osThreadAttr_t LUA_ProcessTask_attributes = {
   .name = "LUA_ProcessTask",
-  .stack_size = 1024 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityNormal,
 };
 
