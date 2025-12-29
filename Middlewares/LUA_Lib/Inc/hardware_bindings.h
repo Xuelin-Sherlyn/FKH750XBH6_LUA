@@ -57,12 +57,6 @@ int lua_hw_button(lua_State* L);
 int lua_hw_delay(lua_State* L);
 
 /**
- * @brief 帮助函数。
- * Lua用法: `hardware.help`
- */
-int lua_hw_help(lua_State* L);
-
-/**
  * @brief I²C接口数据发送。
  * Lua用法: `hardware.i2c_send(address, {data})`
  * address: I2C设备地址（7位地址）
@@ -101,6 +95,12 @@ int lua_hw_i2c_read_reg(lua_State *L);
  * Lua用法: `hardware.sdinfo()`
  */
 int lua_hw_print_sdcard_info(lua_State *L);
+
+/**
+ * @brief 帮助函数。
+ * Lua用法: `hardware.help`
+ */
+int lua_hw_help(lua_State* L);
 
 /**
  * @brief 设置PWM输出（示例，需要根据你的定时器配置修改）。

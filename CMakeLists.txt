@@ -81,6 +81,7 @@ set(Lua_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltable.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltablib.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltm.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lua_fatfs.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lundump.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lutf8lib.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lvm.c

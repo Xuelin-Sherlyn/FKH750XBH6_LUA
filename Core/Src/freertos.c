@@ -40,6 +40,7 @@
 #include "fatfs.h"
 // #include "embedded_lua.h"
 #include "hardware_bindings.h"
+#include "lua_fatfs.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,7 +65,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
-FATFS *fs;
 static jmp_buf g_lua_panic_jmp;
 
 static HeapRegion_t HeapRAMRegions[]=
@@ -95,7 +95,6 @@ const osThreadAttr_t LUA_ProcessTask_attributes = {
 int lua_panic_handler(lua_State* L);
 int safe_lua_execute(lua_State* L, const char* code, const char* cmd_name);
 
-void FatFs_Check(void);
 void FatFs_GetVolume(void);
 void FatFS_FileList(char* path);
 uint8_t FatFs_FileTest(void);
@@ -227,7 +226,7 @@ void LUA_ProcessTask_Handle(void *argument)
   // UART_DataPacket_t packet;
   char* received_cmd = NULL;
   lua_State* L;
-  FatFs_Check();
+  // FatFs_Check();
   Terminal_Init();
   // 创建Lua虚拟机（这个任务的私有资源）
   L = luaL_newstate();
@@ -237,6 +236,7 @@ void LUA_ProcessTask_Handle(void *argument)
   luaL_openlibs(L); // 打开基础库
   // embedded_lua_init();
   hardware_bindings_init(L); // 注册你的硬件API
+  fatfs_bindings_init(L);
   // UART_Dynamic_Receive_Init();
   // safe_printf("\033[36mLua Shell> \033[0m");
   /* Infinite loop */
@@ -360,92 +360,6 @@ int lua_panic_handler(lua_State* L) {
     // 跳转到安全恢复点
     longjmp(g_lua_panic_jmp, 1);
     return 0; // 永远不会执行到这里
-}
-
-// 判断FatFs是否挂载成功，若没有创建FatFs则格式化SD卡
-void FatFs_Check(void)
-{
-	BYTE work[_MAX_SS];
-
-	FATFS_LinkDriver(&SD_Driver, SDPath);		   // 初始化驱动
-	retSD = f_mount(&SDFatFS, SDPath, 1);	 // 挂载SD卡
-
-	if (retSD == FR_OK)	//判断是否挂载成功
-	{
-		safe_printf("\r\033[32mSD File System Mount Sucess\033[0m\r\n");
-	}
-	else
-	{
-		if(retSD == 13)
-		{
-			safe_printf("\r\033[33mSD Card`s File system has not been created yet, about to format\033[0m\r\n");
-
-			retSD = f_mkfs(SDPath,FM_FAT32,0,work,sizeof work);		//格式化SD卡，FAT32，簇默认大小16K
-
-			if (retSD == FR_OK)		//判断是否格式化成功
-				safe_printf("\r\033[32mSD card formatted successfully!\033[0m\r\n");
-			else
-				safe_printf("\r\033[31mFormatting failed, please check or replace the SD card!\033[0m\r\n");
-		}
-		else
-			safe_printf("\r\033[31mMount Fail:%d\033[0m\r\n",retSD);
-	}
-}
-
-//	函数：FatFs_GetVolume
-//	功能：计算设备的容量，包括总容量和剩余容量
-void FatFs_GetVolume(void)	// 计算设备容量
-{
-//	static FATFS *fs;		//定义结构体指针
-	uint32_t SD_CardCapacity = 0;		//SD卡的总容量
-	uint32_t SD_FreeCapacity = 0;		//SD卡空闲容量
-	DWORD fre_clust, fre_sect, tot_sect; 	//空闲簇，空闲扇区数，总扇区数
-
-	f_getfree(SDPath,&fre_clust,&fs);			//获取SD卡剩余的簇
-
-	tot_sect = (fs->n_fatent-2) * fs->csize;	//总扇区数量 = 总的簇 * 每个簇包含的扇区数
-	fre_sect = fre_clust * fs->csize;			//计算剩余的可用扇区数
-
-	SD_CardCapacity = tot_sect / 2048 ;	// SD卡总容量 = 总扇区数 * 512( 每扇区的字节数 ) / 1048576(换算成MB)
-	SD_FreeCapacity = fre_sect / 2048 ;	//计算剩余的容量，单位为M
-	safe_printf("-------------------Get device capacity information-----------------\r\n");
-	safe_printf("SD Capacity:%luMB\r\n", (unsigned long)SD_CardCapacity);
-	safe_printf("SD Remaining:%luMB\r\n", (unsigned long)SD_FreeCapacity);
-}
-
-// 列出介质内的文件
-void FatFS_FileList(char* path)
-{
-	FRESULT res; //文件操作返回代码
-	DIR dir;     //目录对象
-	static FILINFO fno; //文件信息句柄
-
-  if(path != NULL)
-  {
-    safe_printf("Target Media Path:%s\n", path);
-	  res = f_opendir(&dir, path); //打开目录
-	  if (res == FR_OK)
-	  {
-		  while (1) //循环读取
-		  {
-			  res = f_readdir(&dir, &fno);
-			  if (res != FR_OK || fno.fname[0] == 0) break;
-			  char path_pic[512];
-			  sprintf(path_pic, "%s/%s", path, fno.fname);
-			  safe_printf("Files Path:%s\r\n", path_pic);
-			  osDelay(10);
-		  }
-		  f_closedir(&dir); //关闭目录
-	  }
-	  else
-	  {
-		  safe_printf("open Fail: %d\r\n", res); //输出失败信息
-	  }
-  }
-  else 
-  {
-    safe_printf("Target Media Path is NULL!\n"); 
-  }
 }
 
 //	函数：FatFs_FileTest
