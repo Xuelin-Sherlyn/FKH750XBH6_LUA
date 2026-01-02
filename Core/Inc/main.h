@@ -57,11 +57,21 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define LED_Pin_Pin GPIO_PIN_13
+#define LED_Pin GPIO_PIN_13
 #define LED_Pin_GPIO_Port GPIOC
+#define LCD_DC_Pin GPIO_PIN_12
+#define LCD_DC_GPIO_Port GPIOG
+#define LCD_Backlight_Pin GPIO_PIN_6
+#define LCD_Backlight_GPIO_Port GPIOH
 
 /* USER CODE BEGIN Private defines */
+#define USE_DECIMALS_DISPLAY_FILL_ZERO 1
 
+#define	LCD_Backlight_OFF		HAL_GPIO_WritePin(LCD_Backlight_GPIO_Port, LCD_Backlight_Pin, GPIO_PIN_RESET);
+#define	LCD_Backlight_ON 		HAL_GPIO_WritePin(LCD_Backlight_GPIO_Port, LCD_Backlight_Pin, GPIO_PIN_SET);
+
+#define	LCD_DC_Command		  HAL_GPIO_WritePin(LCD_DC_GPIO_Port, LCD_DC_Pin, GPIO_PIN_RESET);
+#define	LCD_DC_Data 		    HAL_GPIO_WritePin(LCD_DC_GPIO_Port, LCD_DC_Pin, GPIO_PIN_SET);
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

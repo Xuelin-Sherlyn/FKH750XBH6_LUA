@@ -41,11 +41,12 @@
 // #include "embedded_lua.h"
 #include "hardware_bindings.h"
 #include "lua_fatfs.h"
+#include "lua_display.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-
+#define AUTO_MOUNT 1
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -183,27 +184,27 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN StartDefaultTask */
   // safe_printf("\rThread run\n");
   void *axi_sram_ptr = pvPortMalloc(100);
-    if(axi_sram_ptr) {
-        safe_printf("\rSRAM allocation test: PASS (%p)\r\n", axi_sram_ptr);
-        vPortFree(axi_sram_ptr);
-    } else {
-        safe_printf("\rSRAM allocation test: FAIL\r\n");
-    }
-    void *sdram_ptr = pvPortMalloc(1024 * 1024);  // 1MB
-    if(sdram_ptr) {
-        safe_printf("\rSDRAM allocation test: PASS (%p)\r\n", sdram_ptr);
-        
-        /* 验证确实在 SDRAM 地址范围内 */
-        if((uint32_t)sdram_ptr >= (uint32_t)SDRAM_ADDR && 
-           (uint32_t)sdram_ptr < (uint32_t)SDRAM_ADDR + SDRAM_SIZE) {
-            safe_printf("\rSDRAM address verification: PASS (%p)\r\n", sdram_ptr);
-        } else {
-            safe_printf("\rSDRAM address verification: FAIL (%p)\r\n", sdram_ptr);
-        }
-        vPortFree(sdram_ptr);
-    } else {
-        safe_printf("\rSDRAM allocation test: FAIL\r\n");
-    }
+  if(axi_sram_ptr) {
+      safe_printf("\r\033[35mSRAM allocation test: PASS (0x%lX)\033[0m\r\n", axi_sram_ptr);
+      vPortFree(axi_sram_ptr);
+  } else {
+      safe_printf("\r\033[31mSRAM allocation test: FAIL\033[0m\r\n");
+  }
+  void *sdram_ptr = pvPortMalloc(1024 * 1024);  // 1MB
+  if(sdram_ptr) {
+      safe_printf("\r\033[35mSDRAM allocation test: PASS (0x%lX)\033[0m\r\n", sdram_ptr);
+      
+      /* 验证确实在 SDRAM 地址范围内 */
+      if((uint32_t)sdram_ptr >= (uint32_t)SDRAM_ADDR && 
+         (uint32_t)sdram_ptr < (uint32_t)SDRAM_ADDR + SDRAM_SIZE) {
+          safe_printf("\r\033[35mSDRAM address verification: PASS (0x%lX)\033[0m\r\n", sdram_ptr);
+      } else {
+          safe_printf("\r\033[35mSDRAM address verification: FAIL (0x%lX)\033[0m\r\n", sdram_ptr);
+      }
+      vPortFree(sdram_ptr);
+  } else {
+      safe_printf("\r\033[31mSDRAM allocation test: FAIL\033[0m\r\n");
+  }
   /* Infinite loop */
   for(;;)
   {
@@ -226,8 +227,6 @@ void LUA_ProcessTask_Handle(void *argument)
   // UART_DataPacket_t packet;
   char* received_cmd = NULL;
   lua_State* L;
-  // FatFs_Check();
-  Terminal_Init();
   // 创建Lua虚拟机（这个任务的私有资源）
   L = luaL_newstate();
   if (L == NULL) {
@@ -237,6 +236,11 @@ void LUA_ProcessTask_Handle(void *argument)
   // embedded_lua_init();
   hardware_bindings_init(L); // 注册你的硬件API
   fatfs_bindings_init(L);
+  display_bindings_init(L);
+  #if AUTO_MOUNT
+  lua_fatfs_mount(L);
+  #endif
+  Terminal_Init();
   // UART_Dynamic_Receive_Init();
   // safe_printf("\033[36mLua Shell> \033[0m");
   /* Infinite loop */

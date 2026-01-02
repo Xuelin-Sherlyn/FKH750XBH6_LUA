@@ -48,6 +48,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     # Core/Src/uart_dyn_rx.c
     Core/Src/terminal.c
+    Core/Src/st7789.cpp
+    Core/Src/st7789_c_interface.cpp
+    Core/Src/display_font.c
 )
 
 set(Lua_Src
@@ -81,6 +84,7 @@ set(Lua_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltable.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltablib.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltm.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lua_display.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lua_fatfs.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lundump.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lutf8lib.c
