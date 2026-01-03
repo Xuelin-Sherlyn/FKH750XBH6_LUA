@@ -54,6 +54,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 )
 
 set(Lua_Src
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/config.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/hardware_bindings.c
     # ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/embedded_lua.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lapi.c
@@ -86,6 +87,7 @@ set(Lua_Src
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/ltm.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lua_display.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lua_fatfs.c
+    ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lua_file_execute.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lundump.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lutf8lib.c
     ${CMAKE_CURRENT_SOURCE_DIR}/Middlewares/LUA_Lib/Src/lvm.c
