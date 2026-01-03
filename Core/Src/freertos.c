@@ -47,6 +47,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 #define AUTO_MOUNT 1
+#define AUTO_INIT_DISPLAY 1
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -239,6 +240,9 @@ void LUA_ProcessTask_Handle(void *argument)
   display_bindings_init(L);
   #if AUTO_MOUNT
   lua_fatfs_mount(L);
+  #endif
+  #if AUTO_INIT_DISPLAY
+  lua_display_init(L);
   #endif
   Terminal_Init();
   // UART_Dynamic_Receive_Init();

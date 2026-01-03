@@ -2,6 +2,16 @@
 #include "lua.h"
 #include "lauxlib.h"
 
+#define COLOR_RED = 0xFFFF0000
+#define COLOR_GREEN = 0XFF00FF00
+#define COLOR_BLUE = 0XFF0000FF
+#define COLOR_YELOW = 0XFFFFFF00
+#define COLOR_ORANGE = 0XFFFFA500
+#define COLOR_CYAN = 0XFF00FFFF
+#define COLOR_PINK = 0xFFFF00FF
+#define COLOR_WHITE = 0xFFFFFFFF
+
+
 /**
  * @brief 初始化Display绑定库，并注册到指定的Lua状态机。
  * 
