@@ -240,13 +240,13 @@ void LUA_ProcessTask_Handle(void *argument)
   hardware_bindings_init(L); // 注册你的硬件API
   fatfs_bindings_init(L);
   display_bindings_init(L);
+  #if AUTO_INIT_DISPLAY
+  lua_display_init(L);
+  #endif
   #if AUTO_MOUNT
   if(lua_fatfs_mount(L) == 0)
     lua_auto_execute_startup(L);
     // FatFs_FileTest();
-  #endif
-  #if AUTO_INIT_DISPLAY
-  lua_display_init(L);
   #endif
   Terminal_Init();
   // UART_Dynamic_Receive_Init();

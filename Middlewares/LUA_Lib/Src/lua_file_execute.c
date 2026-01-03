@@ -362,7 +362,7 @@ void lua_auto_execute_startup(lua_State* L) {
     
     // 加载配置文件
     if (!config_load(&g_lua_config, "0:/lua.cfg")) {
-        // safe_printf("\r\033[33mUsing default config\033[0m\r\n");
+        safe_printf("\r\033[33mUsing default config\033[0m\r\n");
         
         // 保存默认配置到文件
         config_save(&g_lua_config, "0:/lua.cfg");
