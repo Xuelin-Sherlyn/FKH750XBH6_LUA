@@ -47,7 +47,7 @@ int lua_display_init(lua_State* L);
 
 /**
  * @brief 在指定坐标绘制一行字符串。
- * Lua用法: `display.WriteLine(<(int)X>,<int>Y,<(string)String>,<(int)>Color)`
+ * Lua用法: `display.WriteLine(<(int)X>,<int>Y,<(string)String>,<(int)>FontColor,<(int)>BackColor)`
  */
 int lua_display_writeline(lua_State* L);
 

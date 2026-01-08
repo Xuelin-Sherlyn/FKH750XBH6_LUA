@@ -74,44 +74,89 @@ int lua_display_init(lua_State* L)
 
 int lua_display_writeline(lua_State* L)
 {
-    if(!lua_isnumber(L, 1) && !lua_isnumber(L, 2) && !lua_isstring(L, 3) && !lua_isstring(L, 4))
+    if(!lua_isnumber(L, 1) && !lua_isnumber(L, 2) && !lua_isstring(L, 3))
     {
-        lua_pushstring(L, "display.DrawLine: argument must be (int)X, (int)Y, (LPCWSTR)String, (int)Color");
+        lua_pushstring(L, "display.DrawLine: argument must be (int)X, (int)Y, (LPCWSTR)String");
         return lua_error(L); // 这会安全地触发Lua错误，而不是崩溃
     }
     int X = lua_tointeger(L, 1);
     int Y = lua_tointeger(L, 2);
     const char* str = lua_tostring(L, 3);
-    uint8_t color = lua_tointeger(L, 4);
-    if (X < 0 && Y < 1 && str == NULL && color < 31 && color > 37) {
+    uint8_t FontColor = lua_tointeger(L, 4);
+    uint8_t BackColor = lua_tointeger(L, 5);
+    if (X < 0 && Y < 1 && str == NULL) {
         lua_pushstring(L, "display.Drawline: Arguments Error");
         return lua_error(L);
     }
-    switch(color)
+    if(FontColor)
     {
-        case 31:
-            ST7789_SetColor(g_lcd_handle, 0xFFFF0000);
-            break;
-        case 32:
-            ST7789_SetColor(g_lcd_handle, 0xFF00FF00);
-            break;
-        case 33:
-            ST7789_SetColor(g_lcd_handle, 0xFFFFFF00);
-            break;
-        case 34:
-            ST7789_SetColor(g_lcd_handle, 0xFF0000FF);
-            break;
-        case 35:
-            ST7789_SetColor(g_lcd_handle, 0xFFFF00FF);
-            break;
-        case 36:
-            ST7789_SetColor(g_lcd_handle, 0XFF00FFFF);
-            break;
-        case 37:
-            ST7789_SetColor(g_lcd_handle, 0xFFFFFFF);
-            break;
-        default:
-            break;
+        switch(FontColor)
+        {
+            case 30:
+                ST7789_SetColor(g_lcd_handle, 0xFF000000);
+                break;
+            case 31:
+                ST7789_SetColor(g_lcd_handle, 0xFFFF0000);
+                break;
+            case 32:
+                ST7789_SetColor(g_lcd_handle, 0xFF00FF00);
+                break;
+            case 33:
+                ST7789_SetColor(g_lcd_handle, 0xFFFFFF00);
+                break;
+            case 34:
+                ST7789_SetColor(g_lcd_handle, 0xFF0000FF);
+                break;
+            case 35:
+                ST7789_SetColor(g_lcd_handle, 0xFFFF00FF);
+                break;
+            case 36:
+                ST7789_SetColor(g_lcd_handle, 0XFF00FFFF);
+                break;
+            case 37:
+                ST7789_SetColor(g_lcd_handle, 0xFFFFFFF);
+                break;
+            default:
+                break;
+        }
+    }
+    else {
+        ST7789_SetColor(g_lcd_handle, 0xFFFFFFFF);
+    }
+    if(BackColor)
+        {
+            switch(BackColor)
+            {
+                case 40:
+                    ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
+                    break;
+                case 41:
+                    ST7789_SetBackColor(g_lcd_handle, 0xFFFF0000);
+                    break;
+                case 42:
+                    ST7789_SetBackColor(g_lcd_handle, 0xFF00FF00);
+                    break;
+                case 43:
+                    ST7789_SetBackColor(g_lcd_handle, 0xFFFFFF00);
+                    break;
+                case 44:
+                    ST7789_SetBackColor(g_lcd_handle, 0xFF0000FF);
+                    break;
+                case 45:
+                    ST7789_SetBackColor(g_lcd_handle, 0xFFFF00FF);
+                    break;
+                case 46:
+                    ST7789_SetBackColor(g_lcd_handle, 0XFF00FFFF);
+                    break;
+                case 47:
+                    ST7789_SetBackColor(g_lcd_handle, 0xFFFFFFF);
+                    break;
+                default:
+                    break;
+            }
+        }
+    else {
+        ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
     }
     ST7789_DrawString(g_lcd_handle, X, Y, str);
     return 0;
