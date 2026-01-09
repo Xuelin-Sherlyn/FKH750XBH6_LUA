@@ -26,7 +26,7 @@ int luaopen_display(lua_State* L)
 
 // 3. 初始化函数（在你的main.c或嵌入式初始化中调用）
 void display_bindings_init(lua_State* L) {
-    // 注册硬件模块为全局表 "display"
+    // 注册屏幕模块为全局表 "display"
     luaL_requiref(L, "display", luaopen_display, 1);
     lua_pop(L, 1); // 移除require留下的副本
 }
@@ -124,37 +124,37 @@ int lua_display_writeline(lua_State* L)
         ST7789_SetColor(g_lcd_handle, 0xFFFFFFFF);
     }
     if(BackColor)
+    {
+        switch(BackColor)
         {
-            switch(BackColor)
-            {
-                case 40:
-                    ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
-                    break;
-                case 41:
-                    ST7789_SetBackColor(g_lcd_handle, 0xFFFF0000);
-                    break;
-                case 42:
-                    ST7789_SetBackColor(g_lcd_handle, 0xFF00FF00);
-                    break;
-                case 43:
-                    ST7789_SetBackColor(g_lcd_handle, 0xFFFFFF00);
-                    break;
-                case 44:
-                    ST7789_SetBackColor(g_lcd_handle, 0xFF0000FF);
-                    break;
-                case 45:
-                    ST7789_SetBackColor(g_lcd_handle, 0xFFFF00FF);
-                    break;
-                case 46:
-                    ST7789_SetBackColor(g_lcd_handle, 0XFF00FFFF);
-                    break;
-                case 47:
-                    ST7789_SetBackColor(g_lcd_handle, 0xFFFFFFF);
-                    break;
-                default:
-                    break;
-            }
+            case 40:
+                ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
+                break;
+            case 41:
+                ST7789_SetBackColor(g_lcd_handle, 0xFFFF0000);
+                break;
+            case 42:
+                ST7789_SetBackColor(g_lcd_handle, 0xFF00FF00);
+                break;
+            case 43:
+                ST7789_SetBackColor(g_lcd_handle, 0xFFFFFF00);
+                break;
+            case 44:
+                ST7789_SetBackColor(g_lcd_handle, 0xFF0000FF);
+                break;
+            case 45:
+                ST7789_SetBackColor(g_lcd_handle, 0xFFFF00FF);
+                break;
+            case 46:
+                ST7789_SetBackColor(g_lcd_handle, 0XFF00FFFF);
+                break;
+            case 47:
+                ST7789_SetBackColor(g_lcd_handle, 0xFFFFFFF);
+                break;
+            default:
+                break;
         }
+    }
     else {
         ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
     }
@@ -164,6 +164,7 @@ int lua_display_writeline(lua_State* L)
 
 int lua_display_clear(lua_State* L)
 {
+    ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
     ST7789_Clear(g_lcd_handle);
     return 0;
 }
