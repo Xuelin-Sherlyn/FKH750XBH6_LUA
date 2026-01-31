@@ -257,6 +257,7 @@ int lua_fatfs_getfree(lua_State *L)
     if(retSD != FR_OK)
     {
         safe_printf("\r\n\033[31mGet free space fail\033[0m\r\n");
+        lua_pushnil(L);
         return 1;
     }
     tot_sect = (fs->n_fatent-2) * fs->csize;	//总扇区数量 = 总的簇 * 每个簇包含的扇区数
@@ -267,6 +268,7 @@ int lua_fatfs_getfree(lua_State *L)
 	safe_printf("\r\n-------------------Get device capacity information-----------------\r\n");
 	safe_printf("\rSD Capacity:%luMB\r\n", (unsigned long)SD_CardCapacity);
 	safe_printf("\rSD Remaining:%luMB\r\n", (unsigned long)SD_FreeCapacity);
+    lua_pushinteger(L, fre_sect);
     return 0;
 }
 

@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
     // 滚动方向枚举
-    typedef enum {
+typedef enum {
     SCROLL_LEFT = 0,
     SCROLL_RIGHT,
     SCROLL_UP, 
@@ -31,7 +31,7 @@ extern "C" {
     } ScrollDirection_t;
 
     // 图片信息结构体
-    typedef struct {
+typedef struct {
     uint16_t width;
     uint16_t height;
     uint8_t *data;        // RGB565格式数据指针
