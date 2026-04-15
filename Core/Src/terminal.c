@@ -2,6 +2,7 @@
 #include "terminal.h"
 #include "portable.h"
 #include "usart.h"
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -32,7 +33,7 @@ void Terminal_Init(void) {
     g_terminal.history_display_index = 0;
     
     // 创建队列
-    g_terminal.cmd_queue = xQueueCreate(5, sizeof(char*));
+    g_terminal.cmd_queue = xQueueCreate(1, sizeof(uint32_t));
     
     if (g_terminal.cmd_queue == NULL) {
         safe_printf("\r\033[31mERROR: Failed to create command queue!\033[0m\r\n");

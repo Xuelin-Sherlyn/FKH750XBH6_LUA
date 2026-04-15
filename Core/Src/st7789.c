@@ -1,13 +1,13 @@
-#include "st7789.hpp"
+#include "st7789.h"
 #include "main.h"
 #include "spi.h"
 #include "stm32h750xx.h"
 #include "stm32h7xx_hal.h"
 #include "stm32h7xx_hal_def.h"
 #include "stm32h7xx_hal_spi.h"
-#include <cstdint>
-#include <cstdlib>
 #include <stdio.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 #include "math.h"
 
@@ -15,112 +15,105 @@
 // __attribute__((section(".ram_d1"), aligned(32)))
 // static uint16_t double_buffer_memory[2][320*240];
 
+uint16_t ForgColor = 0x0000;
+uint16_t BackColor = 0x0000;
+pFONT* ASCII_Font = NULL;
+pFONT* Chinese_Font = NULL;
+
 __attribute__((section(".ram_d1"), aligned(32)))
 uint16_t ST7789_Display_Buffer[1024];
-
-ST7789::ST7789(SPI_HandleTypeDef* hspiHandle) : hspi(hspiHandle)
-{
-    // 将指针指向实际的内存缓冲区
-    // double_buffer[0] = double_buffer_memory[0];
-    // double_buffer[1] = double_buffer_memory[1];
-    
-    // 初始化缓冲区为黑色
-    // memset(double_buffer[0], 0x00, BUFFER_SIZE * sizeof(uint16_t));
-    // memset(double_buffer[1], 0x00, BUFFER_SIZE * sizeof(uint16_t));
-    memset(ST7789_Display_Buffer, 0x00, 1024 * sizeof(uint16_t));
-}
 
 /**
   *	@brief	初始化ST7789显示屏
   *	@note	显示屏初始化为320*240
 */
-HAL_StatusTypeDef ST7789::Init(void)
+HAL_StatusTypeDef ST7789_Init(SPI_HandleTypeDef *hspi)
 {
     HAL_StatusTypeDef status;
     // 1. 软件复位
-    status = WriteCommand(0x01); // SWRESET
+    status = WriteCommand(hspi, 0x01); // SWRESET
     HAL_Delay(120);
     
     // 2. 睡眠模式关闭
-    status = WriteCommand(0x11); // SLPOUT
+    status = WriteCommand(hspi, 0x11); // SLPOUT
     HAL_Delay(120);
     
     // 3. 设置颜色模式
-    status = WriteCommand(0x3A); // COLMOD
-    status = WriteData_8bit(0x55); // 16位RGB565
+    status = WriteCommand(hspi, 0x3A); // COLMOD
+    status = WriteData_8bit(hspi, 0x55); // 16位RGB565
     
     // 4. 设置显示方向
-    status = WriteCommand(0x36); // MADCTL
-    status = WriteData_8bit(0x00); // 方向设置
+    status = WriteCommand(hspi, 0x36); // MADCTL
+    status = WriteData_8bit(hspi, 0x00); // 方向设置
     
     // 5. 设置帧率
-    status = WriteCommand(0xB2); // PORCTRL
-    status = WriteData_8bit(0x0C);
-    status = WriteData_8bit(0x0C);
-    status = WriteData_8bit(0x00);
-    status = WriteData_8bit(0x33);
-    status = WriteData_8bit(0x33);
+    status = WriteCommand(hspi, 0xB2); // PORCTRL
+    status = WriteData_8bit(hspi, 0x0C);
+    status = WriteData_8bit(hspi, 0x0C);
+    status = WriteData_8bit(hspi, 0x00);
+    status = WriteData_8bit(hspi, 0x33);
+    status = WriteData_8bit(hspi, 0x33);
     
     // 6. 门控制
-    status = WriteCommand(0xB7); // GCTRL
-    status = WriteData_8bit(0x35);
+    status = WriteCommand(hspi, 0xB7); // GCTRL
+    status = WriteData_8bit(hspi, 0x35);
     
     // 7. VCOMS设置
-    status = WriteCommand(0xBB); // VCOMS
-    status = WriteData_8bit(0x19);
+    status = WriteCommand(hspi, 0xBB); // VCOMS
+    status = WriteData_8bit(hspi, 0x19);
     
     // 8. LCM控制
-    status = WriteCommand(0xC0); // LCMCTRL
-    status = WriteData_8bit(0x2C);
+    status = WriteCommand(hspi, 0xC0); // LCMCTRL
+    status = WriteData_8bit(hspi, 0x2C);
     
     // 9. VDV和VRH命令使能
-    status = WriteCommand(0xC2); // VDVVRHEN
-    status = WriteData_8bit(0x01);
+    status = WriteCommand(hspi, 0xC2); // VDVVRHEN
+    status = WriteData_8bit(hspi, 0x01);
     
     // 10. VRH设置
-    status = WriteCommand(0xC3); // VRHS
-    status = WriteData_8bit(0x12);
+    status = WriteCommand(hspi, 0xC3); // VRHS
+    status = WriteData_8bit(hspi, 0x12);
     
     // 11. VDV设置
-    status = WriteCommand(0xC4); // VDVS
-    status = WriteData_8bit(0x20);
+    status = WriteCommand(hspi, 0xC4); // VDVS
+    status = WriteData_8bit(hspi, 0x20);
     
     // 12. 帧率控制
-    status = WriteCommand(0xC6); // FRCTRL2
-    status = WriteData_8bit(0x0F);
+    status = WriteCommand(hspi, 0xC6); // FRCTRL2
+    status = WriteData_8bit(hspi, 0x0F);
     
     // 13. 电源控制
-    status = WriteCommand(0xD0); // PWCTRL1
-    status = WriteData_8bit(0xA4);
-    status = WriteData_8bit(0xA1);
+    status = WriteCommand(hspi, 0xD0); // PWCTRL1
+    status = WriteData_8bit(hspi, 0xA4);
+    status = WriteData_8bit(hspi, 0xA1);
     
     // 14. 正极伽马校正
-    status = WriteCommand(0xE0); // PVGAMCTRL
+    status = WriteCommand(hspi, 0xE0); // PVGAMCTRL
     uint8_t pv_gamma[] = {0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F, 
                           0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23};
     for(int i = 0; i < 14; i++) {
-        status = WriteData_8bit(pv_gamma[i]);
+        status = WriteData_8bit(hspi, pv_gamma[i]);
     }
     
     // 15. 负极伽马校正
-    status = WriteCommand(0xE1); // NVGAMCTRL
+    status = WriteCommand(hspi, 0xE1); // NVGAMCTRL
     uint8_t nv_gamma[] = {0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F,
                           0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23};
     for(int i = 0; i < 14; i++) {
-        status = WriteData_8bit(nv_gamma[i]);
+        status = WriteData_8bit(hspi, nv_gamma[i]);
     }
     
     // 16. 关闭反色显示
-    status = WriteCommand(0x21); // INVON
+    status = WriteCommand(hspi, 0x21); // INVON
     HAL_Delay(10);
     
     // 17. 打开显示
-    status = WriteCommand(0x29); // DISPON
+    status = WriteCommand(hspi, 0x29); // DISPON
     HAL_Delay(120);
     
     // 18. 设置显示方向（可选）
-    status = WriteCommand(0x36); // MADCTL
-    status = WriteData_8bit(0x70); // 根据需要调整方向
+    status = WriteCommand(hspi, 0x36); // MADCTL
+    status = WriteData_8bit(hspi, 0x70); // 根据需要调整方向
 
     return status;
 }
@@ -130,7 +123,7 @@ HAL_StatusTypeDef ST7789::Init(void)
   * @param  commands: 命令数组指针
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::WriteCommand(uint8_t command)
+HAL_StatusTypeDef WriteCommand(SPI_HandleTypeDef *hspi, uint8_t command)
 {
    LCD_DC_Command;
    return HAL_SPI_Transmit(hspi, &command, 1, 1000);
@@ -142,7 +135,7 @@ HAL_StatusTypeDef ST7789::WriteCommand(uint8_t command)
   * @param  len: 命令数量
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::WriteCommands(uint8_t *commands, uint16_t len) {
+HAL_StatusTypeDef WriteCommands(SPI_HandleTypeDef *hspi, uint8_t *commands, uint16_t len) {
     // 显式类型转换解决编译错误
     uint8_t *buf = (uint8_t*)malloc(len);
     if (buf == NULL) return HAL_ERROR;
@@ -161,7 +154,7 @@ HAL_StatusTypeDef ST7789::WriteCommands(uint8_t *commands, uint16_t len) {
   * @param  data: 数据
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::WriteData_8bit(uint8_t data)
+HAL_StatusTypeDef WriteData_8bit(SPI_HandleTypeDef *hspi, uint8_t data)
 {
    LCD_DC_Data;
    return HAL_SPI_Transmit(hspi, &data, 1, 1000);
@@ -172,7 +165,7 @@ HAL_StatusTypeDef ST7789::WriteData_8bit(uint8_t data)
   * @param  data: 数据
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::WriteData_16bit(uint16_t data)
+HAL_StatusTypeDef WriteData_16bit(SPI_HandleTypeDef *hspi, uint16_t data)
 {
     uint8_t lcd_data_buff[2];
     LCD_DC_Data;
@@ -188,7 +181,7 @@ HAL_StatusTypeDef ST7789::WriteData_16bit(uint16_t data)
   *	@param	Size: 数据大小
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::SPI_Transmit(SPI_HandleTypeDef *hspi, uint16_t pData, uint32_t Size)
+HAL_StatusTypeDef SPI_Transmit(SPI_HandleTypeDef *hspi, uint16_t pData, uint32_t Size)
 {
    uint32_t    tickstart;  
    uint32_t    Timeout = 1000;
@@ -321,7 +314,7 @@ HAL_StatusTypeDef ST7789::SPI_Transmit(SPI_HandleTypeDef *hspi, uint16_t pData, 
   * @param  pData: 缓冲区域指针
   * @param	Size: 缓冲区长度
   */
-HAL_StatusTypeDef ST7789::SPI_TransmitBuffer(SPI_HandleTypeDef *hspi, uint16_t *pData, uint32_t Size)
+HAL_StatusTypeDef SPI_TransmitBuffer(SPI_HandleTypeDef *hspi, uint16_t *pData, uint32_t Size)
 {
   uint32_t    tickstart;  
   uint32_t    Timeout = 1000;
@@ -456,7 +449,7 @@ HAL_StatusTypeDef ST7789::SPI_TransmitBuffer(SPI_HandleTypeDef *hspi, uint16_t *
   *	@param	Timeout: 超时时间
   * @retval	HAL状态
 */
-HAL_StatusTypeDef ST7789::SPI_WaitOnFlagUntilTimeout(SPI_HandleTypeDef *hspi, uint32_t Flag, FlagStatus Status,
+HAL_StatusTypeDef SPI_WaitOnFlagUntilTimeout(SPI_HandleTypeDef *hspi, uint32_t Flag, FlagStatus Status,
                                                     uint32_t Tickstart, uint32_t Timeout)
 {
    /* Wait until flag is set */
@@ -480,7 +473,7 @@ HAL_StatusTypeDef ST7789::SPI_WaitOnFlagUntilTimeout(SPI_HandleTypeDef *hspi, ui
   *	@param	Size: 数据大小
   * @retval HAL状态
   */
-HAL_StatusTypeDef ST7789::SPI_Transmit_DMA(SPI_HandleTypeDef* hspi, uint16_t pData, uint32_t Size)
+HAL_StatusTypeDef SPI_Transmit_DMA(SPI_HandleTypeDef* hspi, uint16_t pData, uint32_t Size)
 {
     if (hspi == nullptr || Size == 0) {
         return HAL_ERROR;
@@ -536,7 +529,7 @@ HAL_StatusTypeDef ST7789::SPI_Transmit_DMA(SPI_HandleTypeDef* hspi, uint16_t pDa
   * @param  pData: 缓冲区域指针
   * @param	Size: 缓冲区长度
   */
-HAL_StatusTypeDef ST7789::SPI_TransmitBuffer_DMA(SPI_HandleTypeDef* hspi, uint16_t* pData, uint32_t Size)
+HAL_StatusTypeDef SPI_TransmitBuffer_DMA(SPI_HandleTypeDef* hspi, uint16_t* pData, uint32_t Size)
 {
     // 检查参数
     if (hspi == nullptr || pData == nullptr || Size == 0) {
@@ -588,7 +581,7 @@ HAL_StatusTypeDef ST7789::SPI_TransmitBuffer_DMA(SPI_HandleTypeDef* hspi, uint16
   * @param  hspi: SPI句柄
   * @param  timeout: 超时时间
   */
-HAL_StatusTypeDef ST7789::SPI_WaitForDMAComplete(SPI_HandleTypeDef* hspi, uint32_t timeout)
+HAL_StatusTypeDef SPI_WaitForDMAComplete(SPI_HandleTypeDef* hspi, uint32_t timeout)
 {
     uint32_t tickstart = HAL_GetTick();
     
@@ -623,7 +616,7 @@ HAL_StatusTypeDef ST7789::SPI_WaitForDMAComplete(SPI_HandleTypeDef* hspi, uint32
   * @brief	关闭ST7789的SPI发送
   *	@param	hspi: SPI句柄
 */
-void ST7789::SPI_CloseTransfer(SPI_HandleTypeDef *hspi)
+void SPI_CloseTransfer(SPI_HandleTypeDef *hspi)
 {
   uint32_t itflag = hspi->Instance->SR;
 
@@ -682,7 +675,7 @@ void ST7789::SPI_CloseTransfer(SPI_HandleTypeDef *hspi)
   * @param	DataBuff: 数据缓冲区地址
   * @param	DataSize: 数据缓冲区长度
 */
-void ST7789::WriteBuff(uint16_t *DataBuff, uint16_t DataSize)
+void WriteBuff(SPI_HandleTypeDef *hspi, uint16_t *DataBuff, uint16_t DataSize)
 {
 	LCD_DC_Data;
   hspi->Init.DataSize = SPI_DATASIZE_16BIT;
@@ -702,24 +695,24 @@ void ST7789::WriteBuff(uint16_t *DataBuff, uint16_t DataSize)
   * @param	x2:	X坐标结束点
   * @param	y2:	Y坐标结束点
 */
-void ST7789::SetAddress(uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2)		
+void SetAddress(SPI_HandleTypeDef *hspi, uint16_t x1,uint16_t y1,uint16_t x2,uint16_t y2)		
 {
-	WriteCommand(0x2a);
-	WriteData_16bit(x1);
-	WriteData_16bit(x2);
+	WriteCommand(hspi, 0x2a);
+	WriteData_16bit(hspi, x1);
+	WriteData_16bit(hspi, x2);
 
-	WriteCommand(0x2b);
-	WriteData_16bit(y1);
-	WriteData_16bit(y2);
+	WriteCommand(hspi, 0x2b);
+	WriteData_16bit(hspi, y1);
+	WriteData_16bit(hspi, y2);
 
-	WriteCommand(0x2c);
+	WriteCommand(hspi, 0x2c);
 }
 
 /**
   * @brief	设置ST7789的颜色
   *	@param	Color: 目标颜色
 */
-void ST7789::SetColor(uint32_t Color)
+void ST7789_SetColor(uint32_t Color)
 {
 	uint16_t Red_Value = 0, Green_Value = 0, Blue_Value = 0;
 	Red_Value   = (uint16_t)((Color&0x00F80000)>>8);
@@ -732,7 +725,7 @@ void ST7789::SetColor(uint32_t Color)
   * @brief	设置ST7789的背景颜色
   *	@param	Color: 目标背景颜色
 */
-void ST7789::SetBackColor(uint32_t Color)
+void ST7789_SetBackColor(uint32_t Color)
 {
 	uint16_t Red_Value = 0, Green_Value = 0, Blue_Value = 0;
 	Red_Value   = (uint16_t)((Color&0x00F80000)>>8);
@@ -744,7 +737,7 @@ void ST7789::SetBackColor(uint32_t Color)
 /**
   * @brief  设置ST7789的字体
   */
-void ST7789::SetFont(pFONT *font)
+void ST7789_SetFont(pFONT *font)
 {
   switch (font->FontType)
   {
@@ -763,9 +756,9 @@ void ST7789::SetFont(pFONT *font)
 /**
   * @brief	清空ST7789显示的内容
 */
-void ST7789::Clear(void)
+void ST7789_Clear(SPI_HandleTypeDef *hspi)
 {
-	SetAddress(0,0,320-1,240-1);
+	SetAddress(hspi,0,0,320-1,240-1);
 	
 	LCD_DC_Data;	
 	hspi->Init.DataSize = SPI_DATASIZE_16BIT;
@@ -784,9 +777,9 @@ void ST7789::Clear(void)
   *	@param	width: 目标矩形的宽度
   * @param	height:	目标矩形的高度
 */
-void ST7789::FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
+void ST7789_FillRect(SPI_HandleTypeDef *hspi, uint16_t x, uint16_t y, uint16_t width, uint16_t height)
 {
-  	SetAddress( x, y, x+width-1, y+height-1);
+  	SetAddress(hspi, x, y, x+width-1, y+height-1);
 	  LCD_DC_Data;
   	hspi->Init.DataSize = SPI_DATASIZE_16BIT;
   	HAL_SPI_Init(hspi);
@@ -805,7 +798,7 @@ void ST7789::FillRect(uint16_t x, uint16_t y, uint16_t width, uint16_t height)
   * @param	height:	目标图像的高度
   *	@param	pImage: 目标图像的数组
 */
-void ST7789::DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t height,const uint8_t *pImage)
+void ST7789_DrawImage(SPI_HandleTypeDef *hspi, uint16_t x,uint16_t y,uint16_t width,uint16_t height,const uint8_t *pImage)
 {  
    uint8_t   disChar;
    uint16_t  Xaddress = x;
@@ -846,15 +839,15 @@ void ST7789::DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t height,cons
       if( BuffCount == Buff_Height*width)
       {
          BuffCount = 0;
-         SetAddress( x, Yaddress , x+width-1, Yaddress+Buff_Height-1);
-         WriteBuff(ST7789_Display_Buffer,width*Buff_Height);
+         SetAddress(hspi, x, Yaddress , x+width-1, Yaddress+Buff_Height-1);
+         WriteBuff(hspi, ST7789_Display_Buffer,width*Buff_Height);
 
          Yaddress = Yaddress+Buff_Height;
       }     
       if( (i+1)== height )
       {
-         SetAddress( x, Yaddress , x+width-1,i+y);
-         WriteBuff(ST7789_Display_Buffer,width*(i+1+y-Yaddress)); 
+         SetAddress(hspi, x, Yaddress , x+width-1,i+y);
+         WriteBuff(hspi, ST7789_Display_Buffer,width*(i+1+y-Yaddress)); 
       }
 	}	
 }
@@ -868,9 +861,9 @@ void ST7789::DrawImage(uint16_t x,uint16_t y,uint16_t width,uint16_t height,cons
   *	@param	DataBuff: 目标缓冲区的地址
   * @note	把缓冲区指向你的全彩图像数组地址即可显示全彩图像
 */
-void ST7789::CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,uint16_t *DataBuff)
+void ST7789_CopyBuffer(SPI_HandleTypeDef *hspi, uint16_t x, uint16_t y,uint16_t width,uint16_t height,uint16_t *DataBuff)
 {
-	SetAddress(x,y,x+width-1,y+height-1);
+	SetAddress(hspi, x,y,x+width-1,y+height-1);
 
 	LCD_DC_Data;
   hspi->Init.DataSize = SPI_DATASIZE_16BIT;
@@ -890,9 +883,9 @@ void ST7789::CopyBuffer(uint16_t x, uint16_t y,uint16_t width,uint16_t height,ui
   * @param  y: Y坐标 (0-239) 
   * @param  ch: 要绘制的字符
   */
-void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
+void ST7789_DrawChar(SPI_HandleTypeDef *hspi, uint16_t x, uint16_t y, char ch)
 {
-  if (ASCII_Font == nullptr || ch == 0) return;
+  if (ASCII_Font == NULL || ch == 0) return;
     // 检查边界
     if (x >= ST7789_WIDTH || y >= ST7789_HEIGHT) return;
     if (x + ASCII_Font->Width > ST7789_WIDTH || y + ASCII_Font->Height > ST7789_HEIGHT) return;
@@ -927,8 +920,8 @@ void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
     }
 
     // 设置字符显示区域
-    SetAddress(x, y, x + ASCII_Font->Width - 1, y + ASCII_Font->Height - 1);
-    WriteBuff(ST7789_Display_Buffer, ASCII_Font->Width * ASCII_Font->Height);
+    SetAddress(hspi, x, y, x + ASCII_Font->Width - 1, y + ASCII_Font->Height - 1);
+    WriteBuff(hspi, ST7789_Display_Buffer, ASCII_Font->Width * ASCII_Font->Height);
     
     // 切换回8位模式
     // hspi->Init.DataSize = SPI_DATASIZE_8BIT;
@@ -941,9 +934,9 @@ void ST7789::DrawChar(uint16_t x, uint16_t y, char ch)
   * @param  y: 起始Y坐标 (0-239)
   * @param  str: 要绘制的字符串
   */
-void ST7789::DrawString(uint16_t x, uint16_t y, const char* str)
+void ST7789_DrawString(SPI_HandleTypeDef *hspi, uint16_t x, uint16_t y, const char* str)
 {
-  if (ASCII_Font == nullptr || str == nullptr) return;
+  if (ASCII_Font == NULL || str == NULL) return;
     uint16_t pos_x = x;
     uint16_t pos_y = y;
     
@@ -966,7 +959,7 @@ void ST7789::DrawString(uint16_t x, uint16_t y, const char* str)
         }
         
         // 绘制字符
-        DrawChar(pos_x, pos_y, *str);
+        ST7789_DrawChar(hspi, pos_x, pos_y, *str);
         
         pos_x += ASCII_Font->Width; // 移动到下一个字符位置
         str++;
@@ -979,11 +972,11 @@ void ST7789::DrawString(uint16_t x, uint16_t y, const char* str)
   * @param  y: 起始Y坐标 (0-319)
   * @param  str: 要绘制的字符串
 */
-void ST7789::DrawNumber(uint8_t x, uint8_t y, int32_t num)
+void ST7789_DrawNumber(SPI_HandleTypeDef *hspi, uint8_t x, uint8_t y, int32_t num)
 {
     char buffer[12];
     snprintf(buffer, sizeof(buffer), "%ld", (long)num);
-    DrawString(x, y, buffer);
+    ST7789_DrawString(hspi, x, y, buffer);
 }
 
 /**
@@ -993,7 +986,7 @@ void ST7789::DrawNumber(uint8_t x, uint8_t y, int32_t num)
   * @param  num: 要绘制的浮点数
   * @param  decimals: 小数位数
   */
-void ST7789::DrawFloat(uint16_t x, uint16_t y, float decimals, uint8_t len, uint8_t decs)
+void ST7789_DrawFloat(SPI_HandleTypeDef *hspi, uint16_t x, uint16_t y, float decimals, uint8_t len, uint8_t decs)
 {
     char buffer[20];
     
@@ -1003,7 +996,7 @@ void ST7789::DrawFloat(uint16_t x, uint16_t y, float decimals, uint8_t len, uint
     snprintf(buffer, sizeof(buffer), "%*.*lf", len, decs, decimals);
     #endif
     
-    DrawString(x, y, buffer);
+    ST7789_DrawString(hspi, x, y, buffer);
 }
 
 /**
@@ -1012,9 +1005,9 @@ void ST7789::DrawFloat(uint16_t x, uint16_t y, float decimals, uint8_t len, uint
  * @param y: 字符左上角Y坐标
  * @param ch: 中文字符
  */
-void ST7789::DrawChineseChar(uint16_t x, uint16_t y, const char* ch)
+void ST7789_DrawChineseChar(SPI_HandleTypeDef *hspi, uint16_t x, uint16_t y, const char* ch)
 {
-    if (ch == nullptr || Chinese_Font == nullptr) return;
+    if (ch == NULL || Chinese_Font == NULL) return;
     
     // 字符编码到字库索引的映射
     uint16_t char_index = 0;
@@ -1072,8 +1065,8 @@ void ST7789::DrawChineseChar(uint16_t x, uint16_t y, const char* ch)
     }
     
     // 设置显示区域并写入数据
-    SetAddress(x, y, x + Chinese_Font->Width - 1, y + Chinese_Font->Height - 1);
-    WriteBuff(ST7789_Display_Buffer, Chinese_Font->Width * Chinese_Font->Height);
+    SetAddress(hspi, x, y, x + Chinese_Font->Width - 1, y + Chinese_Font->Height - 1);
+    WriteBuff(hspi, ST7789_Display_Buffer, Chinese_Font->Width * Chinese_Font->Height);
 }
 
 /**
@@ -1083,9 +1076,9 @@ void ST7789::DrawChineseChar(uint16_t x, uint16_t y, const char* ch)
  * @param str: 中文字符串
  * @note 可以在字符间添加像素间隔，修改 spacing 参数即可
  */
-void ST7789::DrawChineseString(uint16_t x, uint16_t y, const char* str)
+void ST7789_DrawChineseString(SPI_HandleTypeDef *hspi, uint16_t x, uint16_t y, const char* str)
 {
-    if (str == nullptr || Chinese_Font == nullptr) return;
+    if (str == NULL || Chinese_Font == NULL) return;
     
     uint16_t currentX = x;
     uint16_t currentY = y;
@@ -1100,7 +1093,7 @@ void ST7789::DrawChineseString(uint16_t x, uint16_t y, const char* str)
             if (*(str + 1) == '\0') break;
             
             // 显示中文字符
-            DrawChineseChar(currentX, currentY, str);
+            ST7789_DrawChineseChar(hspi, currentX, currentY, str);
             
             // 移动到下一个字符位置
             currentX += Chinese_Font->Width + spacing; // 字符宽度 + 间距
@@ -1109,7 +1102,7 @@ void ST7789::DrawChineseString(uint16_t x, uint16_t y, const char* str)
         } 
         else if ((uint8_t)*str >= 0x20 && (uint8_t)*str <= 0x7E) {
             // ASCII字符 - 使用现有的DrawChar函数
-            DrawChar(currentX, currentY, *str);
+            ST7789_DrawChar(hspi, currentX, currentY, *str);
             currentX += ASCII_Font->Width + spacing; // 字符宽度 + 间距
             
             str += 1; // 跳过1个字节（ASCII字符）
@@ -1128,247 +1121,5 @@ void ST7789::DrawChineseString(uint16_t x, uint16_t y, const char* str)
                 break;
             }
         }
-    }
-}
-
-/**
-  * @brief  加载图片列表
-  * @param  images: 图片数组指针
-  * @param  count: 图片数量
-  * @retval 成功加载的图片数量
-  */
-uint8_t ST7789::LoadImages(Image_t* images, uint8_t count)
-{
-    if (images == nullptr || count == 0) return 0;
-    
-    image_list = images;
-    total_images = count;
-    current_image_index = 0;
-    
-    return total_images;
-}
-
-/**
-  * @brief  开始滚动播放
-  * @param  direction: 滚动方向
-  * @param  speed: 滚动速度
-  */
-void ST7789::StartScroll(ScrollDirection_t direction, uint16_t speed)
-{
-    scroll_direction = direction;
-    scroll_speed = (speed > 0) ? speed : 1;  // 确保速度至少为1
-    is_scrolling = 1;
-    scroll_offset_x = 0;
-    scroll_offset_y = 0;
-}
-
-/**
-  * @brief  停止滚动播放
-  */
-void ST7789::StopScroll(void)
-{
-    is_scrolling = 0;
-}
-
-/**
-  * @brief  设置滚动速度
-  * @param  speed: 滚动速度
-  */
-void ST7789::SetScrollSpeed(uint16_t speed)
-{
-    scroll_speed = speed;
-}
-
-/**
-  * @brief  设置滚动方向
-  * @param  direction: 滚动方向
-  */
-void ST7789::SetScrollDirection(ScrollDirection_t direction)
-{
-    scroll_direction = direction;
-}
-
-/**
-  * @brief  切换到下一张图片
-  */
-void ST7789::NextImage(void)
-{
-    if (total_images > 0) {
-        current_image_index = (current_image_index + 1) % total_images;
-        scroll_offset_x = 0;
-        scroll_offset_y = 0;
-    }
-}
-
-/**
-  * @brief  切换到上一张图片
-  */
-void ST7789::PreviousImage(void)
-{
-    if (total_images > 0) {
-        current_image_index = (current_image_index == 0) ? total_images - 1 : current_image_index - 1;
-        scroll_offset_x = 0;
-        scroll_offset_y = 0;
-    }
-}
-
-/**
-  * @brief  获取当前图片索引
-  * @retval 当前图片索引
-  */
-uint8_t ST7789::GetCurrentImageIndex(void)
-{
-    return current_image_index;
-}
-
-/**
-  * @brief  获取图片总数
-  * @retval 图片总数
-  */
-uint8_t ST7789::GetTotalImages(void)
-{
-    return total_images;
-}
-
-/**
-  * @brief  获取图片像素颜色
-  * @param  img: 图片指针
-  * @param  x: X坐标
-  * @param  y: Y坐标
-  * @retval 像素颜色(RGB565)
-  */
-uint16_t ST7789::GetPixelColor(Image_t* img, int16_t x, int16_t y)
-{
-    if (img == nullptr || img->data == nullptr) return 0;
-    
-    // 边界检查
-    if (x < 0 || x >= img->width || y < 0 || y >= img->height) {
-        return 0;
-    }
-    // 计算在uint8_t数组中的位置（每个像素2个字节）
-    uint32_t pixel_index = (y * img->width + x) * 2;
-    
-    // 组合两个uint8_t为uint16_t (RGB565)
-    // 存储顺序为高位在前（大端序）
-    uint16_t color = (img->data[pixel_index + 1] << 8) | img->data[pixel_index];
-    
-    return color;
-}
-
-/**
-  * @brief  交换双缓冲
-  */
-void ST7789::SwapBuffers(void)
-{
-    active_buffer = 1 - active_buffer;
-}
-
-/**
-  * @brief  渲染滚动帧（修复类型问题）
-  */
-void ST7789::RenderScrollFrame(void)
-{
-    // 严格的条件检查
-    if (!is_scrolling || image_list == nullptr || total_images == 0) {
-        return;
-    }
-    
-    if (current_image_index >= total_images) {
-        current_image_index = 0;
-        return;
-    }
-    
-    Image_t* current_image = &image_list[current_image_index];
-    
-    // 检查图片数据是否有效
-    if (current_image->data == nullptr || 
-        current_image->width == 0 || 
-        current_image->height == 0) {
-        return;
-    }
-    
-    // 获取当前渲染缓冲区
-    uint16_t* render_buffer = double_buffer[active_buffer];
-    
-    // 安全的渲染循环
-    switch (scroll_direction) {
-        case SCROLL_LEFT:
-            for (int16_t y = 0; y < ST7789_HEIGHT; y++) {
-                for (int16_t x = 0; x < ST7789_WIDTH; x++) {
-                    int16_t src_x = (scroll_offset_x + x) % current_image->width;
-                    int16_t src_y = y % current_image->height;
-                    uint32_t buffer_index = y * ST7789_WIDTH + x;
-                    
-                    // 确保不越界
-                    if (buffer_index < BUFFER_SIZE) {
-                        render_buffer[buffer_index] = GetPixelColor(current_image, src_x, src_y);
-                    }
-                }
-            }
-            scroll_offset_x = (scroll_offset_x + scroll_speed) % current_image->width;
-            break;
-            
-        case SCROLL_RIGHT:
-            for (int16_t y = 0; y < ST7789_HEIGHT; y++) {
-                for (int16_t x = 0; x < ST7789_WIDTH; x++) {
-                    int16_t src_x = (current_image->width - scroll_offset_x + x) % current_image->width;
-                    if (src_x < 0) src_x += current_image->width;
-                    int16_t src_y = y % current_image->height;
-                    uint32_t buffer_index = y * ST7789_WIDTH + x;
-                    
-                    if (buffer_index < BUFFER_SIZE) {
-                        render_buffer[buffer_index] = GetPixelColor(current_image, src_x, src_y);
-                    }
-                }
-            }
-            scroll_offset_x = (scroll_offset_x + scroll_speed) % current_image->width;
-            break;
-            
-        case SCROLL_UP:
-            for (int16_t y = 0; y < ST7789_HEIGHT; y++) {
-                for (int16_t x = 0; x < ST7789_WIDTH; x++) {
-                    int16_t src_x = x % current_image->width;
-                    int16_t src_y = (scroll_offset_y + y) % current_image->height;
-                    uint32_t buffer_index = y * ST7789_WIDTH + x;
-                    
-                    if (buffer_index < BUFFER_SIZE) {
-                        render_buffer[buffer_index] = GetPixelColor(current_image, src_x, src_y);
-                    }
-                }
-            }
-            scroll_offset_y = (scroll_offset_y + scroll_speed) % current_image->height;
-            break;
-            
-        case SCROLL_DOWN:
-            for (int16_t y = 0; y < ST7789_HEIGHT; y++) {
-                for (int16_t x = 0; x < ST7789_WIDTH; x++) {
-                    int16_t src_x = x % current_image->width;
-                    int16_t src_y = (current_image->height - scroll_offset_y + y) % current_image->height;
-                    if (src_y < 0) src_y += current_image->height;
-                    uint32_t buffer_index = y * ST7789_WIDTH + x;
-                    
-                    if (buffer_index < BUFFER_SIZE) {
-                        render_buffer[buffer_index] = GetPixelColor(current_image, src_x, src_y);
-                    }
-                }
-            }
-            scroll_offset_y = (scroll_offset_y + scroll_speed) % current_image->height;
-            break;
-    }
-    
-    // 显示渲染的帧
-    CopyBuffer(0, 0, ST7789_WIDTH, ST7789_HEIGHT, render_buffer);
-    
-    // 交换缓冲区
-    active_buffer = 1 - active_buffer;
-}
-
-/**
-  * @brief  更新滚动显示（在主循环中调用）
-  */
-void ST7789::UpdateScroll(void)
-{
-    if (is_scrolling) {
-        RenderScrollFrame();
     }
 }

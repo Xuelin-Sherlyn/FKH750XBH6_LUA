@@ -3,11 +3,9 @@
 #include "lauxlib.h"
 #include "main.h"
 #include "spi.h"
-#include "st7789_c_interface.h"
+#include "st7789.h"
 #include <stdint.h>
 #include <sys/_intsup.h>
-
-ST7789_Handle g_lcd_handle = NULL;
 
 // 1. 注册函数结构体数组（便于批量注册）
 const luaL_Reg display_functions[] = {
@@ -58,16 +56,13 @@ int lua_display_backlight(lua_State* L)
 
 int lua_display_init(lua_State* L)
 {
-    g_lcd_handle = ST7789_Create(&hspi6);
-    if (g_lcd_handle) {
-        ST7789_InitDisplay(g_lcd_handle);
-        ST7789_SetFont(g_lcd_handle, &ASCII_10x20);
-        ST7789_SetColor(g_lcd_handle, 0xFF00FFFF);
-        ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
-        ST7789_Clear(g_lcd_handle);
-        LCD_Backlight_ON;
-        return 0;
-    }
+    ST7789_Init(&hspi6);
+    ST7789_SetFont(&ASCII_10x20);
+    ST7789_SetColor(0xFF00FFFF);
+    ST7789_SetBackColor(0xFF000000);
+    ST7789_Clear(&hspi6);
+    LCD_Backlight_ON;
+    return 0;
     lua_pushstring(L, "Display Init Fail");
     return lua_error(L); // 这会安全地触发Lua错误，而不是崩溃
 }
@@ -93,78 +88,78 @@ int lua_display_writeline(lua_State* L)
         switch(FontColor)
         {
             case 30:
-                ST7789_SetColor(g_lcd_handle, 0xFF000000);
+                ST7789_SetColor(0xFF000000);
                 break;
             case 31:
-                ST7789_SetColor(g_lcd_handle, 0xFFFF0000);
+                ST7789_SetColor(0xFFFF0000);
                 break;
             case 32:
-                ST7789_SetColor(g_lcd_handle, 0xFF00FF00);
+                ST7789_SetColor(0xFF00FF00);
                 break;
             case 33:
-                ST7789_SetColor(g_lcd_handle, 0xFFFFFF00);
+                ST7789_SetColor(0xFFFFFF00);
                 break;
             case 34:
-                ST7789_SetColor(g_lcd_handle, 0xFF0000FF);
+                ST7789_SetColor(0xFF0000FF);
                 break;
             case 35:
-                ST7789_SetColor(g_lcd_handle, 0xFFFF00FF);
+                ST7789_SetColor(0xFFFF00FF);
                 break;
             case 36:
-                ST7789_SetColor(g_lcd_handle, 0XFF00FFFF);
+                ST7789_SetColor(0XFF00FFFF);
                 break;
             case 37:
-                ST7789_SetColor(g_lcd_handle, 0xFFFFFFF);
+                ST7789_SetColor(0xFFFFFFF);
                 break;
             default:
                 break;
         }
     }
     else {
-        ST7789_SetColor(g_lcd_handle, 0xFFFFFFFF);
+        ST7789_SetColor(0xFFFFFFFF);
     }
     if(BackColor)
     {
         switch(BackColor)
         {
             case 40:
-                ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
+                ST7789_SetBackColor(0xFF000000);
                 break;
             case 41:
-                ST7789_SetBackColor(g_lcd_handle, 0xFFFF0000);
+                ST7789_SetBackColor(0xFFFF0000);
                 break;
             case 42:
-                ST7789_SetBackColor(g_lcd_handle, 0xFF00FF00);
+                ST7789_SetBackColor(0xFF00FF00);
                 break;
             case 43:
-                ST7789_SetBackColor(g_lcd_handle, 0xFFFFFF00);
+                ST7789_SetBackColor(0xFFFFFF00);
                 break;
             case 44:
-                ST7789_SetBackColor(g_lcd_handle, 0xFF0000FF);
+                ST7789_SetBackColor(0xFF0000FF);
                 break;
             case 45:
-                ST7789_SetBackColor(g_lcd_handle, 0xFFFF00FF);
+                ST7789_SetBackColor(0xFFFF00FF);
                 break;
             case 46:
-                ST7789_SetBackColor(g_lcd_handle, 0XFF00FFFF);
+                ST7789_SetBackColor(0XFF00FFFF);
                 break;
             case 47:
-                ST7789_SetBackColor(g_lcd_handle, 0xFFFFFFF);
+                ST7789_SetBackColor(0xFFFFFFF);
                 break;
             default:
                 break;
         }
     }
     else {
-        ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
+        ST7789_SetBackColor(0xFF000000);
     }
-    ST7789_DrawString(g_lcd_handle, X, Y, str);
+    ST7789_DrawString(&hspi6, X, Y, str);
     return 0;
 }
 
 int lua_display_clear(lua_State* L)
 {
-    ST7789_SetBackColor(g_lcd_handle, 0xFF000000);
-    ST7789_Clear(g_lcd_handle);
+    ST7789_SetBackColor(0xFF000000);
+    ST7789_Clear(&hspi6);
     return 0;
 }

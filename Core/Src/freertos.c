@@ -54,12 +54,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// #define DTCMRAM_ADDR       ((uint8_t*)0x20010000)
+// #define DTCMRAM_ADDR       ((uint8_t*)0x20000000)
 // #define DTCMRAM_SIZE       ((uint32_t)0x00010000)
 #define AXIRAM_ADDR        ((uint8_t*)0x24002000)
 #define AXIRAM_SIZE        ((uint32_t)0x00078000)
 #define SDRAM_ADDR         ((uint8_t*)0xC0000000)
-#define SDRAM_SIZE         ((uint32_t)0x01000000)
+#define SDRAM_SIZE         ((uint32_t)0x02000000)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/

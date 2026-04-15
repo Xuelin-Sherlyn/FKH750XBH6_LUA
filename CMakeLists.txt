@@ -48,8 +48,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
     # Core/Src/uart_dyn_rx.c
     Core/Src/terminal.c
-    Core/Src/st7789.cpp
-    Core/Src/st7789_c_interface.cpp
+    Core/Src/st7789.c
     Core/Src/display_font.c
 )
 
